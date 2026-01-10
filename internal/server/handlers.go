@@ -12,11 +12,12 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		<!DOCTYPE html>
 		<html>
 		<head>
-			<title>Baptism Invitation</title>
+			<meta charset="utf-8">
+			<title>Invitație Eveniment</title>
 		</head>
 		<body>
-			<h1>Welcome to the Baptism Invitation System</h1>
-			<p><a href="/auth/google">Admin Login</a></p>
+			<h1>Bine ai venit!</h1>
+			<p><a href="/auth/google">Administrează-ți evenimentul</a></p>
 		</body>
 		</html>
 	`)
@@ -74,4 +75,3 @@ func (s *Server) handleAdminMarkSent(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement mark as sent
 	w.Write([]byte("Mark as Sent - Coming soon"))
 }
-
