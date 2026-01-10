@@ -1,0 +1,127 @@
+version: '3'
+
+vars:
+  BINARY_NAME: evite
+  MAIN_PATH: ./cmd/server
+  DB_PATH: ./evite.db
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  install:
+    desc: Install dependencies
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  build:
+    desc: Build the application
+    cmds:
+      - go build -o {{.BINARY_NAME}} {{.MAIN_PATH}}
+
+  run:
+    desc: Run the application
+    cmds:
+      - go run {{.MAIN_PATH}}/main.go
+
+  dev:
+    desc: Run with auto-reload (requires air)
+    cmds:
+      - air
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test -v ./...
+
+  test-coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test -v -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Coverage report generated at coverage.html"
+
+  lint:
+    desc: Run linter
+    cmds:
+      - golangci-lint run
+
+  fmt:
+    desc: Format code
+    cmds:
+      - go fmt ./...
+      - gofmt -s -w .
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  clean:
+    desc: Clean build artifacts and database
+    cmds:
+      - rm -f {{.BINARY_NAME}}
+      - rm -f {{.DB_PATH}}
+      - rm -f {{.DB_PATH}}-shm
+      - rm -f {{.DB_PATH}}-wal
+      - rm -f coverage.out coverage.html
+
+  db-create:
+    desc: Create database and run migrations
+    cmds:
+      - go run {{.MAIN_PATH}}/main.go &
+      - sleep 2
+      - pkill -f {{.BINARY_NAME}}
+
+  db-reset:
+    desc: Reset database (delete and recreate)
+    cmds:
+      - task: clean
+      - task: db-create
+
+  migrate-up:
+    desc: Run migrations up
+    cmds:
+      - goose -dir migrations sqlite3 {{.DB_PATH}} up
+
+  migrate-down:
+    desc: Run migrations down
+    cmds:
+      - goose -dir migrations sqlite3 {{.DB_PATH}} down
+
+  migrate-status:
+    desc: Check migration status
+    cmds:
+      - goose -dir migrations sqlite3 {{.DB_PATH}} status
+
+  migrate-create:
+    desc: "Create a new migration (usage: task migrate-create NAME=migration_name)"
+    cmds:
+      - goose -dir migrations create {{.NAME}} sql
+
+  check:
+    desc: Run all checks (fmt, vet, lint, test)
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: test
+
+  docker-build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t {{.BINARY_NAME}}:latest .
+
+  docker-run:
+    desc: Run Docker container
+    cmds:
+      - docker run -p 8080:8080 --env-file .env {{.BINARY_NAME}}:latest
+
+  help:
+    desc: Show help
+    cmds:
+      - echo "Available tasks:"
+      - task --list
+
