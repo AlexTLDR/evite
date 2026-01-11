@@ -1,0 +1,39 @@
+package templates
+
+templ Layout(title string, lang string) {
+	<!DOCTYPE html>
+	<html lang={ lang }>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			<link rel="stylesheet" href="/static/css/style.css"/>
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		</head>
+		<body>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ AdminLayout(title string, lang string, userName string) {
+	@Layout(title, lang) {
+		<div class="admin-container">
+			<nav class="admin-nav">
+				<div class="nav-brand">
+					<h1>Evite Admin</h1>
+				</div>
+				<div class="nav-links">
+					<a href="/admin">Dashboard</a>
+					<a href="/admin/invitations">Invitații</a>
+					<span class="user-info">{ userName }</span>
+					<a href="/auth/logout" class="logout">Deconectare</a>
+				</div>
+			</nav>
+			<main class="admin-main">
+				{ children... }
+			</main>
+		</div>
+	}
+}
+

@@ -1,0 +1,92 @@
+package templates
+
+import (
+	"github.com/AlexTLDR/evite/internal/database"
+	"fmt"
+)
+
+templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse) {
+	@AdminLayout("Invitații - Evite Admin", "ro", userName) {
+		<div class="page-header">
+			<h2>Lista Invitații</h2>
+			<a href="/admin/invitations/new" class="btn btn-primary">+ Invitație Nouă</a>
+		</div>
+		if len(invitations) == 0 {
+			<div class="empty-state">
+				<p>Nu există invitații încă.</p>
+				<a href="/admin/invitations/new" class="btn btn-primary">Creează prima invitație</a>
+			</div>
+		} else {
+			<table class="invitations-table">
+				<thead>
+					<tr>
+						<th>Invitat</th>
+						<th>Telefon</th>
+						<th>Status</th>
+						<th>Răspuns</th>
+						<th>Acțiuni</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, inv := range invitations {
+						<tr>
+							<td>{ inv.GuestName }</td>
+							<td>{ inv.Phone }</td>
+							<td>
+								<div class="status-badges">
+									if inv.SentAt.Valid {
+										<span class="badge badge-success">Trimis</span>
+									} else {
+										<span class="badge badge-warning">Netrimis</span>
+									}
+									if inv.OpenedAt.Valid {
+										<span class="badge badge-info">Deschis</span>
+									}
+									if inv.RespondedAt.Valid {
+										<span class="badge badge-primary">Răspuns</span>
+									}
+								</div>
+							</td>
+							<td>
+								if inv.Response != nil {
+									if inv.Response.Attending {
+										<span class="attendance-yes">✓ Participă</span>
+										if inv.Response.PlusOne {
+											<span class="plus-one">+1</span>
+										}
+										if inv.Response.KidsCount > 0 {
+											<span class="kids">{ fmt.Sprintf("%d copii", inv.Response.KidsCount) }</span>
+										}
+									} else {
+										<span class="attendance-no">✗ Nu participă</span>
+									}
+								} else {
+									<span class="no-response">-</span>
+								}
+							</td>
+							<td>
+								<div class="action-buttons" x-data={ fmt.Sprintf("{ copyMessage() { navigator.clipboard.writeText(`%s`).then(() => alert('Mesaj copiat!')) } }", inv.InviteMessage) }>
+									<button
+										class="btn btn-sm btn-secondary"
+										@click="copyMessage()"
+									>
+										Copiază Mesaj
+									</button>
+									if !inv.SentAt.Valid {
+										<form method="POST" action="/admin/invitations/mark-sent" style="display: inline;">
+											<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
+											<button type="submit" class="btn btn-sm btn-primary">
+												Marchează Trimis
+											</button>
+										</form>
+									}
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}
+
