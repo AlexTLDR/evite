@@ -21,12 +21,16 @@ tasks:
   templ:
     desc: Generate templ templates
     cmds:
+      - echo "Generating templ templates..."
       - ~/go/bin/templ generate
+      - echo "✓ Templ templates generated"
 
   css:
     desc: Build Tailwind CSS
     cmds:
-      - ./tailwindcss -i static/css/input.css -o static/css/tailwind.css
+      - echo "Building Tailwind CSS with DaisyUI..."
+      - ./tailwindcss -i static/css/input.css -o static/css/tailwind.css --minify
+      - echo "✓ Tailwind CSS built"
 
   css-watch:
     desc: Watch and rebuild Tailwind CSS
@@ -40,9 +44,12 @@ tasks:
       - go build -o {{.BINARY_NAME}} {{.MAIN_PATH}}
 
   run:
-    desc: Run the application
-    deps: [templ, css]
+    desc: Run the application (rebuilds templ and CSS first)
     cmds:
+      - echo "🔨 Building templates and styles..."
+      - task: templ
+      - task: css
+      - echo "🚀 Starting server..."
       - go run {{.MAIN_PATH}}/main.go
 
   dev:

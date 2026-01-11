@@ -302,15 +302,15 @@ body {
     max-width: 400px;
 }
 
-/* Decorative Elements - Circular Motion around the card */
+/* Decorative Elements - Random popup animations */
 .decoration-element {
     position: absolute;
     font-size: 4rem;
-    opacity: 0.6;
+    opacity: 0;
     z-index: 5;
     pointer-events: none;
-    top: 50%;
-    left: 50%;
+    transform: scale(0) rotate(0deg);
+    transition: none;
 }
 
 .decoration-element.svg-ladybug {
@@ -323,140 +323,44 @@ body {
     width: 100%;
     height: 100%;
     display: block;
+    /* Hide alt text */
+    font-size: 0;
+    color: transparent;
 }
 
-/* Rounded rectangular path animation following card contour with rotation */
-@keyframes rotate-clockwise {
-    /* Top right corner - rotating to face down-right */
+/* Popup animation - appear, wiggle, disappear with custom rotation */
+@keyframes popup {
     0% {
-        transform: translate(230px, -300px) rotate(45deg);
-    }
-    /* Right side - moving down - facing down */
-    5% {
-        transform: translate(240px, -240px) rotate(90deg);
+        opacity: 0;
+        transform: scale(0) rotate(0deg);
     }
     10% {
-        transform: translate(240px, -180px) rotate(90deg);
+        opacity: 0.7;
+        transform: scale(1.1) rotate(calc(var(--rotation) + 5deg));
     }
     15% {
-        transform: translate(240px, -120px) rotate(90deg);
+        transform: scale(1) rotate(calc(var(--rotation) - 3deg));
     }
     20% {
-        transform: translate(240px, -60px) rotate(90deg);
+        transform: scale(1) rotate(calc(var(--rotation) + 2deg));
     }
     25% {
-        transform: translate(240px, 0px) rotate(90deg);
+        transform: scale(1) rotate(var(--rotation));
     }
-    30% {
-        transform: translate(240px, 60px) rotate(90deg);
-    }
-    35% {
-        transform: translate(240px, 120px) rotate(90deg);
-    }
-    40% {
-        transform: translate(240px, 180px) rotate(90deg);
-    }
-    45% {
-        transform: translate(240px, 240px) rotate(90deg);
-    }
-    /* Bottom right corner - rotating to face left */
-    50% {
-        transform: translate(230px, 300px) rotate(135deg);
-    }
-    /* Bottom side - moving left - facing left */
-    55% {
-        transform: translate(150px, 310px) rotate(180deg);
-    }
-    60% {
-        transform: translate(50px, 310px) rotate(180deg);
-    }
-    65% {
-        transform: translate(-50px, 310px) rotate(180deg);
-    }
-    70% {
-        transform: translate(-150px, 310px) rotate(180deg);
-    }
-    /* Bottom left corner - rotating to face up */
-    75% {
-        transform: translate(-230px, 300px) rotate(225deg);
-    }
-    /* Left side - moving up - facing up */
-    80% {
-        transform: translate(-240px, 180px) rotate(270deg);
-    }
+    /* Stay visible */
     85% {
-        transform: translate(-240px, 0px) rotate(270deg);
+        opacity: 0.7;
+        transform: scale(1) rotate(var(--rotation));
     }
-    90% {
-        transform: translate(-240px, -180px) rotate(270deg);
-    }
-    /* Top left corner - rotating to face right */
+    /* Disappear */
     95% {
-        transform: translate(-230px, -300px) rotate(315deg);
-    }
-    /* Top side - moving right - facing right */
-    97.5% {
-        transform: translate(-100px, -310px) rotate(360deg);
+        opacity: 0;
+        transform: scale(0.8) rotate(calc(var(--rotation) + 10deg));
     }
     100% {
-        transform: translate(230px, -300px) rotate(405deg);
+        opacity: 0;
+        transform: scale(0) rotate(0deg);
     }
-}
-
-/* Individual elements with different speeds and random starting positions */
-.decoration-1 {
-    animation: rotate-clockwise 22s linear infinite;
-    animation-delay: -3.7s;
-}
-
-.decoration-2 {
-    animation: rotate-clockwise 25s linear infinite;
-    animation-delay: -18.2s;
-}
-
-.decoration-3 {
-    animation: rotate-clockwise 20s linear infinite;
-    animation-delay: -9.5s;
-}
-
-.decoration-4 {
-    animation: rotate-clockwise 28s linear infinite;
-    animation-delay: -21.3s;
-}
-
-.decoration-5 {
-    animation: rotate-clockwise 24s linear infinite;
-    animation-delay: -14.8s;
-}
-
-.decoration-6 {
-    animation: rotate-clockwise 26s linear infinite;
-    animation-delay: -6.1s;
-}
-
-.decoration-7 {
-    animation: rotate-clockwise 23s linear infinite;
-    animation-delay: -16.9s;
-}
-
-.decoration-8 {
-    animation: rotate-clockwise 27s linear infinite;
-    animation-delay: -11.4s;
-}
-
-.decoration-9 {
-    animation: rotate-clockwise 21s linear infinite;
-    animation-delay: -4.2s;
-}
-
-.decoration-10 {
-    animation: rotate-clockwise 29s linear infinite;
-    animation-delay: -19.7s;
-}
-
-.decoration-11 {
-    animation: rotate-clockwise 23.5s linear infinite;
-    animation-delay: -12.6s;
 }
 
 .decoration-12 {
@@ -508,46 +412,7 @@ body {
         height: 4.5rem;
     }
 
-    @keyframes rotate-clockwise {
-        /* Top right corner */
-        0% {
-            transform: translate(170px, -220px) rotate(45deg);
-        }
-        /* Right side - facing down */
-        10% {
-            transform: translate(180px, -140px) rotate(90deg);
-        }
-        25% {
-            transform: translate(180px, 0px) rotate(90deg);
-        }
-        40% {
-            transform: translate(180px, 140px) rotate(90deg);
-        }
-        /* Bottom right corner */
-        50% {
-            transform: translate(170px, 220px) rotate(135deg);
-        }
-        /* Bottom side - facing left */
-        62.5% {
-            transform: translate(0px, 230px) rotate(180deg);
-        }
-        /* Bottom left corner */
-        75% {
-            transform: translate(-170px, 220px) rotate(225deg);
-        }
-        /* Left side - facing up */
-        85% {
-            transform: translate(-180px, 0px) rotate(270deg);
-        }
-        /* Top left corner */
-        95% {
-            transform: translate(-170px, -220px) rotate(315deg);
-        }
-        /* Top side - facing right */
-        100% {
-            transform: translate(170px, -220px) rotate(405deg);
-        }
-    }
+    /* Mobile devices will use the same dynamic animation */
 
     .invitation-card-overlay p {
         font-size: 0.95rem;
