@@ -3,6 +3,10 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/AlexTLDR/evite/internal/i18n"
+	"github.com/AlexTLDR/evite/templates"
 )
 
 // Public handlers
@@ -57,21 +61,127 @@ func (s *Server) handleAdminDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAdminInvitations(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement invitations list
-	w.Write([]byte("Admin Invitations List - Coming soon"))
+	_, userName := s.getCurrentUser(r)
+
+	invitations, err := s.db.GetAllInvitationsWithResponses()
+	if err != nil {
+		http.Error(w, "Failed to load invitations", http.StatusInternalServerError)
+		return
+	}
+
+	templates.AdminInvitationsList(userName, invitations).Render(r.Context(), w)
 }
 
 func (s *Server) handleAdminNewInvitation(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement new invitation form
-	w.Write([]byte("New Invitation Form - Coming soon"))
+	_, userName := s.getCurrentUser(r)
+	templates.AdminNewInvitation(userName, "").Render(r.Context(), w)
 }
 
 func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement create invitation
-	w.Write([]byte("Create Invitation - Coming soon"))
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/invitations/new", http.StatusSeeOther)
+		return
+	}
+
+	_, userName := s.getCurrentUser(r)
+
+	// Parse form
+	if err := r.ParseForm(); err != nil {
+		templates.AdminNewInvitation(userName, "Eroare la procesarea formularului").Render(r.Context(), w)
+		return
+	}
+
+	guestName := strings.TrimSpace(r.FormValue("guest_name"))
+	phone := strings.TrimSpace(r.FormValue("phone"))
+
+	// Validate
+	if guestName == "" || phone == "" {
+		templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii").Render(r.Context(), w)
+		return
+	}
+
+	// Generate invite message with placeholder
+	lang := i18n.GetLanguageFromRequest(r)
+	inviteMessageTemplate := s.generateInviteMessageTemplate(guestName, lang)
+
+	// Create invitation (this will generate the token)
+	inv, err := s.db.CreateInvitation(guestName, phone, inviteMessageTemplate)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			templates.AdminNewInvitation(userName, "Acest număr de telefon există deja").Render(r.Context(), w)
+			return
+		}
+		templates.AdminNewInvitation(userName, "Eroare la crearea invitației").Render(r.Context(), w)
+		return
+	}
+
+	// Now update the message with the actual token
+	rsvpLink := fmt.Sprintf("%s/rsvp/%s", s.config.BaseURL, inv.Token)
+	finalMessage := strings.Replace(inviteMessageTemplate, "{{TOKEN}}", inv.Token, 1)
+	finalMessage = strings.Replace(finalMessage, "{{RSVP_LINK}}", rsvpLink, 1)
+
+	// Update the invitation with the final message
+	_, err = s.db.Exec("UPDATE invitations SET invite_message = ? WHERE id = ?", finalMessage, inv.ID)
+	if err != nil {
+		// Log error but don't fail - the invitation is created
+		fmt.Printf("Warning: failed to update invite message: %v\n", err)
+	}
+
+	// Redirect to list
+	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
 }
 
 func (s *Server) handleAdminMarkSent(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement mark as sent
-	w.Write([]byte("Mark as Sent - Coming soon"))
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	idStr := r.FormValue("id")
+	var id int64
+	fmt.Sscanf(idStr, "%d", &id)
+
+	if err := s.db.MarkAsSent(id); err != nil {
+		http.Error(w, "Failed to mark as sent", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+}
+
+func (s *Server) generateInviteMessageTemplate(guestName string, lang i18n.Language) string {
+	if lang == i18n.Romanian {
+		return fmt.Sprintf(`Bună %s,
+
+Fiica noastră se botează 🎉
+
+Evenimentul va avea loc pe 19 Aprilie 2026:
+- Biserica: %s
+- Restaurant: %s
+
+Te rugăm să confirmi prezența aici:
+{{RSVP_LINK}}
+
+Cu drag,
+Familia`, guestName, s.config.ChurchName, s.config.RestaurantName)
+	}
+
+	return fmt.Sprintf(`Hi %s,
+
+Our daughter is getting baptised 🎉
+
+The event will take place on April 19, 2026:
+- Church: %s
+- Restaurant: %s
+
+Please confirm your attendance here:
+{{RSVP_LINK}}
+
+With love,
+The Family`, guestName, s.config.ChurchName, s.config.RestaurantName)
 }
