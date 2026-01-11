@@ -295,52 +295,202 @@ body {
     position: relative;
 }
 
-/* Decorative Ladybugs */
-.ladybug-decoration {
-    position: fixed;
-    font-size: 2.5rem;
-    opacity: 0.3;
-    animation: float 6s ease-in-out infinite;
-    z-index: 1;
+/* Card with text overlay */
+.invitation-card-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
 }
 
-.ladybug-top-left {
-    top: 5%;
-    left: 5%;
-    animation-delay: 0s;
+/* Decorative Elements - Circular Motion around the card */
+.decoration-element {
+    position: absolute;
+    font-size: 4rem;
+    opacity: 0.6;
+    z-index: 5;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
 }
 
-.ladybug-top-right {
-    top: 10%;
-    right: 8%;
-    animation-delay: 1.5s;
+.decoration-element.svg-ladybug {
+    width: 6rem;
+    height: 6rem;
+    font-size: inherit;
 }
 
-.ladybug-bottom-left {
-    bottom: 15%;
-    left: 8%;
-    animation-delay: 3s;
+.decoration-element.svg-ladybug img {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
-.ladybug-bottom-right {
-    bottom: 10%;
-    right: 5%;
-    animation-delay: 4.5s;
-}
-
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0) rotate(0deg);
+/* Rounded rectangular path animation following card contour with rotation */
+@keyframes rotate-clockwise {
+    /* Top right corner - rotating to face down-right */
+    0% {
+        transform: translate(230px, -300px) rotate(45deg);
+    }
+    /* Right side - moving down - facing down */
+    5% {
+        transform: translate(240px, -240px) rotate(90deg);
+    }
+    10% {
+        transform: translate(240px, -180px) rotate(90deg);
+    }
+    15% {
+        transform: translate(240px, -120px) rotate(90deg);
+    }
+    20% {
+        transform: translate(240px, -60px) rotate(90deg);
     }
     25% {
-        transform: translateY(-20px) rotate(5deg);
+        transform: translate(240px, 0px) rotate(90deg);
     }
+    30% {
+        transform: translate(240px, 60px) rotate(90deg);
+    }
+    35% {
+        transform: translate(240px, 120px) rotate(90deg);
+    }
+    40% {
+        transform: translate(240px, 180px) rotate(90deg);
+    }
+    45% {
+        transform: translate(240px, 240px) rotate(90deg);
+    }
+    /* Bottom right corner - rotating to face left */
     50% {
-        transform: translateY(-10px) rotate(-5deg);
+        transform: translate(230px, 300px) rotate(135deg);
     }
+    /* Bottom side - moving left - facing left */
+    55% {
+        transform: translate(150px, 310px) rotate(180deg);
+    }
+    60% {
+        transform: translate(50px, 310px) rotate(180deg);
+    }
+    65% {
+        transform: translate(-50px, 310px) rotate(180deg);
+    }
+    70% {
+        transform: translate(-150px, 310px) rotate(180deg);
+    }
+    /* Bottom left corner - rotating to face up */
     75% {
-        transform: translateY(-15px) rotate(3deg);
+        transform: translate(-230px, 300px) rotate(225deg);
     }
+    /* Left side - moving up - facing up */
+    80% {
+        transform: translate(-240px, 180px) rotate(270deg);
+    }
+    85% {
+        transform: translate(-240px, 0px) rotate(270deg);
+    }
+    90% {
+        transform: translate(-240px, -180px) rotate(270deg);
+    }
+    /* Top left corner - rotating to face right */
+    95% {
+        transform: translate(-230px, -300px) rotate(315deg);
+    }
+    /* Top side - moving right - facing right */
+    97.5% {
+        transform: translate(-100px, -310px) rotate(360deg);
+    }
+    100% {
+        transform: translate(230px, -300px) rotate(405deg);
+    }
+}
+
+/* Individual elements with different speeds and random starting positions */
+.decoration-1 {
+    animation: rotate-clockwise 22s linear infinite;
+    animation-delay: -3.7s;
+}
+
+.decoration-2 {
+    animation: rotate-clockwise 25s linear infinite;
+    animation-delay: -18.2s;
+}
+
+.decoration-3 {
+    animation: rotate-clockwise 20s linear infinite;
+    animation-delay: -9.5s;
+}
+
+.decoration-4 {
+    animation: rotate-clockwise 28s linear infinite;
+    animation-delay: -21.3s;
+}
+
+.decoration-5 {
+    animation: rotate-clockwise 24s linear infinite;
+    animation-delay: -14.8s;
+}
+
+.decoration-6 {
+    animation: rotate-clockwise 26s linear infinite;
+    animation-delay: -6.1s;
+}
+
+.decoration-7 {
+    animation: rotate-clockwise 23s linear infinite;
+    animation-delay: -16.9s;
+}
+
+.decoration-8 {
+    animation: rotate-clockwise 27s linear infinite;
+    animation-delay: -11.4s;
+}
+
+.decoration-9 {
+    animation: rotate-clockwise 21s linear infinite;
+    animation-delay: -4.2s;
+}
+
+.decoration-10 {
+    animation: rotate-clockwise 29s linear infinite;
+    animation-delay: -19.7s;
+}
+
+.decoration-11 {
+    animation: rotate-clockwise 23.5s linear infinite;
+    animation-delay: -12.6s;
+}
+
+.decoration-12 {
+    animation: rotate-clockwise 26.5s linear infinite;
+    animation-delay: -7.3s;
+}
+
+/* Card with text overlay and decorations */
+.invitation-card-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.invitation-card-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 10;
+    width: 80%;
+}
+
+.invitation-card-overlay p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+}
+
+.invitation-card-overlay .btn {
+    margin-top: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Responsive Design */
@@ -349,7 +499,57 @@ body {
         padding: 1rem 0.5rem;
     }
 
-    .ladybug-decoration {
-        font-size: 1.5rem;
+    .decoration-element {
+        font-size: 3rem;
+    }
+
+    .decoration-element.svg-ladybug {
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    @keyframes rotate-clockwise {
+        /* Top right corner */
+        0% {
+            transform: translate(170px, -220px) rotate(45deg);
+        }
+        /* Right side - facing down */
+        10% {
+            transform: translate(180px, -140px) rotate(90deg);
+        }
+        25% {
+            transform: translate(180px, 0px) rotate(90deg);
+        }
+        40% {
+            transform: translate(180px, 140px) rotate(90deg);
+        }
+        /* Bottom right corner */
+        50% {
+            transform: translate(170px, 220px) rotate(135deg);
+        }
+        /* Bottom side - facing left */
+        62.5% {
+            transform: translate(0px, 230px) rotate(180deg);
+        }
+        /* Bottom left corner */
+        75% {
+            transform: translate(-170px, 220px) rotate(225deg);
+        }
+        /* Left side - facing up */
+        85% {
+            transform: translate(-180px, 0px) rotate(270deg);
+        }
+        /* Top left corner */
+        95% {
+            transform: translate(-170px, -220px) rotate(315deg);
+        }
+        /* Top side - facing right */
+        100% {
+            transform: translate(170px, -220px) rotate(405deg);
+        }
+    }
+
+    .invitation-card-overlay p {
+        font-size: 0.95rem;
     }
 }

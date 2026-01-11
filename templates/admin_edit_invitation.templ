@@ -1,7 +1,9 @@
 package templates
 
-import "github.com/AlexTLDR/evite/internal/database"
-import "fmt"
+import (
+	"github.com/AlexTLDR/evite/internal/database"
+	"fmt"
+)
 
 templ AdminEditInvitation(userName string, invitation *database.Invitation, errorMsg string) {
 	@AdminLayout("Editează Invitație - Evite Admin", "ro", userName) {
@@ -23,8 +25,10 @@ templ AdminEditInvitation(userName string, invitation *database.Invitation, erro
 					name="guest_name" 
 					required
 					value={ invitation.GuestName }
+					placeholder="ex: Ion Popescu"
 					class="form-control"
 				/>
+				<small class="form-help">Numele complet al invitatului</small>
 			</div>
 			<div class="form-group">
 				<label for="phone">Telefon *</label>
@@ -34,12 +38,13 @@ templ AdminEditInvitation(userName string, invitation *database.Invitation, erro
 					name="phone" 
 					required
 					value={ invitation.Phone }
+					placeholder="ex: +40712345678"
 					class="form-control"
 				/>
 				<small class="form-help">Număr de telefon unic pentru fiecare invitat</small>
 			</div>
 			<div class="form-actions">
-				<button type="submit" class="btn btn-primary">Salvează Modificările</button>
+				<button type="submit" class="btn btn-primary">Actualizează Invitație</button>
 				<a href="/admin/invitations" class="btn btn-secondary">Anulează</a>
 			</div>
 		</form>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <!-- Red Ladybug -->
+  <symbol id="ladybug-red" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="60" rx="35" ry="40" fill="#ff0000"/>
+    <circle cx="50" cy="30" r="20" fill="#000000"/>
+    <line x1="50" y1="30" x2="50" y2="100" stroke="#000000" stroke-width="3"/>
+    <circle cx="35" cy="50" r="5" fill="#000000"/>
+    <circle cx="65" cy="50" r="5" fill="#000000"/>
+    <circle cx="35" cy="70" r="5" fill="#000000"/>
+    <circle cx="65" cy="70" r="5" fill="#000000"/>
+    <circle cx="50" cy="80" r="4" fill="#000000"/>
+  </symbol>
+  
+  <!-- Yellow Ladybug -->
+  <symbol id="ladybug-yellow" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="60" rx="35" ry="40" fill="#ffd700"/>
+    <circle cx="50" cy="30" r="20" fill="#000000"/>
+    <line x1="50" y1="30" x2="50" y2="100" stroke="#000000" stroke-width="3"/>
+    <circle cx="35" cy="50" r="5" fill="#000000"/>
+    <circle cx="65" cy="50" r="5" fill="#000000"/>
+    <circle cx="35" cy="70" r="5" fill="#000000"/>
+    <circle cx="65" cy="70" r="5" fill="#000000"/>
+    <circle cx="50" cy="80" r="4" fill="#000000"/>
+  </symbol>
+  
+  <!-- Orange Ladybug -->
+  <symbol id="ladybug-orange" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="60" rx="35" ry="40" fill="#ff8c00"/>
+    <circle cx="50" cy="30" r="20" fill="#000000"/>
+    <line x1="50" y1="30" x2="50" y2="100" stroke="#000000" stroke-width="3"/>
+    <circle cx="35" cy="50" r="5" fill="#000000"/>
+    <circle cx="65" cy="50" r="5" fill="#000000"/>
+    <circle cx="35" cy="70" r="5" fill="#000000"/>
+    <circle cx="65" cy="70" r="5" fill="#000000"/>
+    <circle cx="50" cy="80" r="4" fill="#000000"/>
+  </symbol>
+  
+  <!-- Pink Ladybug -->
+  <symbol id="ladybug-pink" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="60" rx="35" ry="40" fill="#ff69b4"/>
+    <circle cx="50" cy="30" r="20" fill="#000000"/>
+    <line x1="50" y1="30" x2="50" y2="100" stroke="#000000" stroke-width="3"/>
+    <circle cx="35" cy="50" r="5" fill="#000000"/>
+    <circle cx="65" cy="50" r="5" fill="#000000"/>
+    <circle cx="35" cy="70" r="5" fill="#000000"/>
+    <circle cx="65" cy="70" r="5" fill="#000000"/>
+    <circle cx="50" cy="80" r="4" fill="#000000"/>
+  </symbol>
+</svg>
+
