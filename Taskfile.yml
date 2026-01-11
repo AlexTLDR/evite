@@ -17,13 +17,20 @@ tasks:
       - go mod download
       - go mod tidy
 
+  templ:
+    desc: Generate templ templates
+    cmds:
+      - ~/go/bin/templ generate
+
   build:
     desc: Build the application
+    deps: [templ]
     cmds:
       - go build -o {{.BINARY_NAME}} {{.MAIN_PATH}}
 
   run:
     desc: Run the application
+    deps: [templ]
     cmds:
       - go run {{.MAIN_PATH}}/main.go
 
