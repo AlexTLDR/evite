@@ -1,0 +1,52 @@
+package templates
+
+import (
+	"github.com/AlexTLDR/evite/internal/database"
+	"fmt"
+)
+
+templ AdminEditInvitation(userName string, invitation *database.Invitation, errorMsg string) {
+	@AdminLayout("Editează Invitație - Evite Admin", "ro", userName) {
+		<div class="page-header">
+			<h2>Editează Invitație</h2>
+			<a href="/admin/invitations" class="btn btn-secondary">← Înapoi la listă</a>
+		</div>
+		<div class="form-container">
+			if errorMsg != "" {
+				<div class="alert alert-error">
+					{ errorMsg }
+				</div>
+			}
+			<form method="POST" action={ templ.URL(fmt.Sprintf("/admin/invitations/update/%d", invitation.ID)) } class="invitation-form">
+				<div class="form-group">
+					<label for="guest_name">Nume Invitat *</label>
+					<input
+						type="text"
+						id="guest_name"
+						name="guest_name"
+						value={ invitation.GuestName }
+						required
+						placeholder="ex: Ion Popescu"
+					/>
+				</div>
+				<div class="form-group">
+					<label for="phone">Telefon *</label>
+					<input
+						type="tel"
+						id="phone"
+						name="phone"
+						value={ invitation.Phone }
+						required
+						placeholder="ex: +40712345678"
+					/>
+					<small class="form-help">Numărul de telefon este folosit ca identificator unic</small>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">Salvează Modificările</button>
+					<a href="/admin/invitations" class="btn btn-secondary">Anulează</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+

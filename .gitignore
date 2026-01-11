@@ -35,6 +35,10 @@ go.work.sum
 # Templ generated files
 *_templ.go
 
+# Tailwind CLI
+tailwindcss
+static/css/tailwind.css
+
 # Editor/IDE
 .idea/
 .vscode/

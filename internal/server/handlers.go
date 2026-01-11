@@ -21,7 +21,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		</head>
 		<body>
 			<h1>Bine ai venit!</h1>
-			<p><a href="/auth/google">Administrează-ți evenimentul</a></p>
+			<p>Pentru a accesa invitația, folosește link-ul primit pe WhatsApp.</p>
 		</body>
 		</html>
 	`)

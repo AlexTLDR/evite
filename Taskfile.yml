@@ -22,15 +22,25 @@ tasks:
     cmds:
       - ~/go/bin/templ generate
 
+  css:
+    desc: Build Tailwind CSS
+    cmds:
+      - ./tailwindcss -i static/css/input.css -o static/css/tailwind.css
+
+  css-watch:
+    desc: Watch and rebuild Tailwind CSS
+    cmds:
+      - ./tailwindcss -i static/css/input.css -o static/css/tailwind.css --watch
+
   build:
     desc: Build the application
-    deps: [templ]
+    deps: [templ, css]
     cmds:
       - go build -o {{.BINARY_NAME}} {{.MAIN_PATH}}
 
   run:
     desc: Run the application
-    deps: [templ]
+    deps: [templ, css]
     cmds:
       - go run {{.MAIN_PATH}}/main.go
 

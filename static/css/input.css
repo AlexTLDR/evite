@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+/* Scan templates for Tailwind classes */
+@source "../../templates";
+

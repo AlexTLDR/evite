@@ -144,3 +144,42 @@ func (db *DB) MarkAsOpened(id int64) error {
 	}
 	return nil
 }
+
+// UpdateInvitation updates an invitation's guest name and phone
+func (db *DB) UpdateInvitation(id int64, guestName, phone string) error {
+	_, err := db.Exec(
+		`UPDATE invitations SET guest_name = ?, phone = ? WHERE id = ?`,
+		guestName, phone, id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update invitation: %w", err)
+	}
+	return nil
+}
+
+// DeleteInvitation deletes an invitation and all its responses
+func (db *DB) DeleteInvitation(id int64) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Delete all responses first
+	_, err = tx.Exec(`DELETE FROM responses WHERE invitation_id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete responses: %w", err)
+	}
+
+	// Delete the invitation
+	_, err = tx.Exec(`DELETE FROM invitations WHERE id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete invitation: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
