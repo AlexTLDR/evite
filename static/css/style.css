@@ -277,3 +277,78 @@ body {
     font-size: 0.875rem;
 }
 
+/* Public/Landing Page Styles */
+.public-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 50%, #fff5f5 100%);
+    position: relative;
+    padding: 2rem 1rem;
+}
+
+.landing-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Decorative Ladybugs */
+.ladybug-decoration {
+    position: fixed;
+    font-size: 2.5rem;
+    opacity: 0.3;
+    animation: float 6s ease-in-out infinite;
+    z-index: 1;
+}
+
+.ladybug-top-left {
+    top: 5%;
+    left: 5%;
+    animation-delay: 0s;
+}
+
+.ladybug-top-right {
+    top: 10%;
+    right: 8%;
+    animation-delay: 1.5s;
+}
+
+.ladybug-bottom-left {
+    bottom: 15%;
+    left: 8%;
+    animation-delay: 3s;
+}
+
+.ladybug-bottom-right {
+    bottom: 10%;
+    right: 5%;
+    animation-delay: 4.5s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-20px) rotate(5deg);
+    }
+    50% {
+        transform: translateY(-10px) rotate(-5deg);
+    }
+    75% {
+        transform: translateY(-15px) rotate(3deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .public-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .ladybug-decoration {
+        font-size: 1.5rem;
+    }
+}

@@ -11,20 +11,8 @@ import (
 
 // Public handlers
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<meta charset="utf-8">
-			<title>Invitație Eveniment</title>
-		</head>
-		<body>
-			<h1>Bine ai venit!</h1>
-			<p>Pentru a accesa invitația, folosește link-ul primit pe WhatsApp.</p>
-		</body>
-		</html>
-	`)
+	lang := i18n.GetLanguageFromRequest(r)
+	templates.Home(string(lang)).Render(r.Context(), w)
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {

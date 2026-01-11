@@ -7,6 +7,7 @@ templ Layout(title string, lang string) {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
+			<link rel="stylesheet" href="/static/css/tailwind.css"/>
 			<link rel="stylesheet" href="/static/css/style.css"/>
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 		</head>
@@ -14,6 +15,14 @@ templ Layout(title string, lang string) {
 			{ children... }
 		</body>
 	</html>
+}
+
+templ PublicLayout(title string, lang string) {
+	@Layout(title, lang) {
+		<div class="public-container">
+			{ children... }
+		</div>
+	}
 }
 
 templ AdminLayout(title string, lang string, userName string) {

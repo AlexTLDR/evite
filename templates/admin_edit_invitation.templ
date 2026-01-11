@@ -1,9 +1,7 @@
 package templates
 
-import (
-	"github.com/AlexTLDR/evite/internal/database"
-	"fmt"
-)
+import "github.com/AlexTLDR/evite/internal/database"
+import "fmt"
 
 templ AdminEditInvitation(userName string, invitation *database.Invitation, errorMsg string) {
 	@AdminLayout("Editează Invitație - Evite Admin", "ro", userName) {
@@ -11,42 +9,40 @@ templ AdminEditInvitation(userName string, invitation *database.Invitation, erro
 			<h2>Editează Invitație</h2>
 			<a href="/admin/invitations" class="btn btn-secondary">← Înapoi la listă</a>
 		</div>
-		<div class="form-container">
-			if errorMsg != "" {
-				<div class="alert alert-error">
-					{ errorMsg }
-				</div>
-			}
-			<form method="POST" action={ templ.URL(fmt.Sprintf("/admin/invitations/update/%d", invitation.ID)) } class="invitation-form">
-				<div class="form-group">
-					<label for="guest_name">Nume Invitat *</label>
-					<input
-						type="text"
-						id="guest_name"
-						name="guest_name"
-						value={ invitation.GuestName }
-						required
-						placeholder="ex: Ion Popescu"
-					/>
-				</div>
-				<div class="form-group">
-					<label for="phone">Telefon *</label>
-					<input
-						type="tel"
-						id="phone"
-						name="phone"
-						value={ invitation.Phone }
-						required
-						placeholder="ex: +40712345678"
-					/>
-					<small class="form-help">Numărul de telefon este folosit ca identificator unic</small>
-				</div>
-				<div class="form-actions">
-					<button type="submit" class="btn btn-primary">Salvează Modificările</button>
-					<a href="/admin/invitations" class="btn btn-secondary">Anulează</a>
-				</div>
-			</form>
-		</div>
+		if errorMsg != "" {
+			<div class="alert alert-error">
+				{ errorMsg }
+			</div>
+		}
+		<form method="POST" action={ templ.URL(fmt.Sprintf("/admin/invitations/update/%d", invitation.ID)) } class="invitation-form">
+			<div class="form-group">
+				<label for="guest_name">Nume Invitat *</label>
+				<input 
+					type="text" 
+					id="guest_name" 
+					name="guest_name" 
+					required
+					value={ invitation.GuestName }
+					class="form-control"
+				/>
+			</div>
+			<div class="form-group">
+				<label for="phone">Telefon *</label>
+				<input 
+					type="tel" 
+					id="phone" 
+					name="phone" 
+					required
+					value={ invitation.Phone }
+					class="form-control"
+				/>
+				<small class="form-help">Număr de telefon unic pentru fiecare invitat</small>
+			</div>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary">Salvează Modificările</button>
+				<a href="/admin/invitations" class="btn btn-secondary">Anulează</a>
+			</div>
+		</form>
 	}
 }
 

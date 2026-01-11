@@ -1,0 +1,24 @@
+{
+  "name": "evite",
+  "version": "1.0.0",
+  "description": "A simple, elegant RSVP system for events and parties with magic links and admin management.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexTLDR/evite.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AlexTLDR/evite/issues"
+  },
+  "homepage": "https://github.com/AlexTLDR/evite#readme",
+  "devDependencies": {
+    "daisyui": "^5.5.14"
+  }
+}

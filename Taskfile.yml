@@ -16,6 +16,7 @@ tasks:
     cmds:
       - go mod download
       - go mod tidy
+      - npm install
 
   templ:
     desc: Generate templ templates
