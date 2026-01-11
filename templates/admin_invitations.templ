@@ -80,6 +80,15 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 											</button>
 										</form>
 									}
+									<a href={ templ.URL(fmt.Sprintf("/admin/invitations/edit/%d", inv.ID)) } class="btn btn-sm btn-info">
+										Editează
+									</a>
+									<form method="POST" action="/admin/invitations/delete" style="display: inline;" onsubmit="return confirm('Sigur vrei să ștergi această invitație?')">
+										<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
+										<button type="submit" class="btn btn-sm btn-danger">
+											Șterge
+										</button>
+									</form>
 								</div>
 							</td>
 						</tr>

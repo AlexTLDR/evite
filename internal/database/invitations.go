@@ -22,7 +22,7 @@ func (db *DB) CreateInvitation(guestName, phone, inviteMessage string) (*Invitat
 	var token string
 	var err error
 	maxRetries := 5
-	
+
 	for i := 0; i < maxRetries; i++ {
 		token, err = GenerateToken()
 		if err != nil {

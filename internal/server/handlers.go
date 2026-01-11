@@ -154,6 +154,82 @@ func (s *Server) handleAdminMarkSent(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
 }
 
+func (s *Server) handleAdminEditInvitation(w http.ResponseWriter, r *http.Request) {
+	_, userName := s.getCurrentUser(r)
+
+	// Extract ID from URL path
+	idStr := r.URL.Path[len("/admin/invitations/edit/"):]
+	var id int64
+	fmt.Sscanf(idStr, "%d", &id)
+
+	invitation, err := s.db.GetInvitationByID(id)
+	if err != nil {
+		http.Error(w, "Invitation not found", http.StatusNotFound)
+		return
+	}
+
+	templates.AdminEditInvitation(userName, invitation, "").Render(r.Context(), w)
+}
+
+func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+		return
+	}
+
+	_, userName := s.getCurrentUser(r)
+
+	// Extract ID from URL path
+	idStr := r.URL.Path[len("/admin/invitations/update/"):]
+	var id int64
+	fmt.Sscanf(idStr, "%d", &id)
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	guestName := r.FormValue("guest_name")
+	phone := r.FormValue("phone")
+
+	if guestName == "" || phone == "" {
+		invitation, _ := s.db.GetInvitationByID(id)
+		templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii").Render(r.Context(), w)
+		return
+	}
+
+	if err := s.db.UpdateInvitation(id, guestName, phone); err != nil {
+		invitation, _ := s.db.GetInvitationByID(id)
+		templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.").Render(r.Context(), w)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+}
+
+func (s *Server) handleAdminDeleteInvitation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form", http.StatusBadRequest)
+		return
+	}
+
+	idStr := r.FormValue("id")
+	var id int64
+	fmt.Sscanf(idStr, "%d", &id)
+
+	if err := s.db.DeleteInvitation(id); err != nil {
+		http.Error(w, "Failed to delete invitation", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
+}
+
 func (s *Server) generateInviteMessageTemplate(guestName string, lang i18n.Language) string {
 	if lang == i18n.Romanian {
 		return fmt.Sprintf(`Bună %s,

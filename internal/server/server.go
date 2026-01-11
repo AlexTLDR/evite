@@ -47,6 +47,9 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/admin/invitations", s.requireAuth(s.handleAdminInvitations))
 	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(s.handleAdminNewInvitation))
 	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(s.handleAdminCreateInvitation))
+	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(s.handleAdminEditInvitation))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(s.handleAdminUpdateInvitation))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(s.handleAdminDeleteInvitation))
 	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(s.handleAdminMarkSent))
 }
 
@@ -58,7 +61,7 @@ func (s *Server) Start(addr string) error {
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, _ := s.sessionStore.Get(r, "auth-session")
-		
+
 		email, ok := session.Values["email"].(string)
 		if !ok || email == "" {
 			http.Redirect(w, r, "/auth/google", http.StatusSeeOther)
@@ -83,4 +86,3 @@ func (s *Server) isAdminEmail(email string) bool {
 	}
 	return false
 }
-
