@@ -284,6 +284,7 @@ body {
     min-height: 100vh;
     position: relative;
     padding: 2rem 1rem;
+    background-color: oklch(var(--b2));
 }
 
 .landing-page {
@@ -293,13 +294,21 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
+    background-color: oklch(var(--b2));
 }
 
-/* Card with text overlay */
-.invitation-card-container {
+/* Wrapper for card and decorations */
+.invitation-wrapper {
     position: relative;
     width: 100%;
     max-width: 400px;
+}
+
+/* Card container */
+.invitation-card-container {
+    position: relative;
+    width: 100%;
+    z-index: 1;
 }
 
 /* Decorative Elements - Random popup animations */
@@ -307,7 +316,7 @@ body {
     position: absolute;
     font-size: 4rem;
     opacity: 0;
-    z-index: 5;
+    z-index: 100;
     pointer-events: none;
     transform: scale(0) rotate(0deg);
     transition: none;

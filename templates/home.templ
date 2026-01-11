@@ -39,9 +39,9 @@ templ Home(lang string) {
 				</button>
 			</div>
 
-			<!-- Invitation Card with Random Popup Decorations -->
+			<!-- Wrapper for card and decorations -->
 			<div
-				class="invitation-card-container"
+				class="invitation-wrapper"
 				x-data="{
 					bugs: [
 						'ladybug.svg', 'ladybug2.svg', 'ladybug3.svg', 'ladybug4.svg', 'ladybug5.svg', 'cute-ladybug.svg'
@@ -133,18 +133,10 @@ templ Home(lang string) {
 				}"
 				x-init="preloadImages(); showRandomDecorations()"
 			>
-				<!-- Random Popup Decorations -->
-				<template x-for="deco in activeDecorations" :key="deco.id">
-					<div
-						class="decoration-element svg-ladybug"
-						:style="`top: ${deco.top}; left: ${deco.left}; animation: popup ${deco.duration}s ease-in-out; --rotation: ${deco.rotation}deg;`"
-					>
-						<img :src="`/static/images/${deco.image}`" alt="" loading="eager"/>
-					</div>
-				</template>
-
-				<!-- DaisyUI Baptism Invitation Card -->
-				<div class="card w-96 max-w-md shadow-2xl bg-secondary text-secondary-content">
+				<!-- Invitation Card Container -->
+				<div class="invitation-card-container">
+					<!-- DaisyUI Baptism Invitation Card -->
+					<div class="card w-96 max-w-md shadow-2xl bg-secondary text-secondary-content">
 					<div class="card-body text-center py-8 px-6">
 						<!-- Greeting -->
 						<p class="text-xl mb-4 opacity-90">
@@ -274,7 +266,18 @@ templ Home(lang string) {
 				</div>
 			</div>
 
+			<!-- Random Popup Decorations -->
+			<template x-for="deco in activeDecorations" :key="deco.id">
+				<div
+					class="decoration-element svg-ladybug"
+					:style="`top: ${deco.top}; left: ${deco.left}; animation: popup ${deco.duration}s ease-in-out; --rotation: ${deco.rotation}deg;`"
+				>
+					<img :src="`/static/images/${deco.image}`" alt="" loading="eager"/>
+				</div>
+			</template>
+
 		</div>
+	</div>
 	}
 }
 
