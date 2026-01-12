@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/i18n"
 	"github.com/AlexTLDR/evite/templates"
 )
@@ -12,17 +13,113 @@ import (
 // Public handlers
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	lang := i18n.GetLanguageFromRequest(r)
-	templates.Home(string(lang)).Render(r.Context(), w)
+
+	// Check if there's a token in the query parameter
+	token := r.URL.Query().Get("token")
+
+	var invitation *database.Invitation
+	if token != "" {
+		// Try to get invitation by token
+		inv, err := s.db.GetInvitationByToken(token)
+		if err == nil {
+			invitation = inv
+			// Mark as opened if not already
+			if !invitation.OpenedAt.Valid {
+				s.db.MarkAsOpened(invitation.ID)
+			}
+		}
+	}
+
+	// Render home page with optional invitation data
+	templates.Home(string(lang), invitation).Render(r.Context(), w)
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement RSVP form
-	w.Write([]byte("RSVP Form - Coming soon"))
+	// Extract token from URL path
+	token := r.URL.Path[len("/rsvp/"):]
+	if token == "" {
+		// Redirect to home page without token
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// Redirect to home page with token as query parameter
+	http.Redirect(w, r, "/?token="+token, http.StatusSeeOther)
 }
 
 func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement RSVP submission
-	w.Write([]byte("RSVP Submit - Coming soon"))
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	// Get token and validate invitation
+	token := r.FormValue("token")
+	invitation, err := s.db.GetInvitationByToken(token)
+	if err != nil {
+		http.Error(w, "Invitation not found", http.StatusNotFound)
+		return
+	}
+
+	// Parse form values
+	attending := r.FormValue("attending") == "true"
+	plusOne := r.FormValue("plus_one") == "true"
+	guestName := strings.TrimSpace(r.FormValue("guest_name"))
+	guestPhone := strings.TrimSpace(r.FormValue("guest_phone"))
+	comment := strings.TrimSpace(r.FormValue("comment"))
+
+	// Parse kids count
+	kidsCount := 0
+	if kidsCountStr := r.FormValue("kids_count"); kidsCountStr != "" {
+		fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
+	}
+
+	// If no invitation, try to find or create one based on name and phone
+	if invitation == nil {
+		if guestName == "" || guestPhone == "" {
+			http.Error(w, "Name and phone are required", http.StatusBadRequest)
+			return
+		}
+
+		// Try to find existing invitation by phone
+		// For now, create a new invitation
+		inv, err := s.db.CreateInvitation(guestName, guestPhone, "")
+		if err != nil {
+			// If phone already exists, try to get the invitation
+			existingInv, getErr := s.db.GetInvitationByPhone(guestPhone)
+			if getErr != nil {
+				http.Error(w, "Failed to process invitation", http.StatusInternalServerError)
+				return
+			}
+			invitation = existingInv
+		} else {
+			invitation = inv
+		}
+	}
+
+	// Create response
+	_, err = s.db.CreateResponse(
+		invitation.ID,
+		attending,
+		plusOne,
+		"", // plus_one_name - not used anymore
+		invitation.GuestName,
+		kidsCount,
+		comment,
+	)
+	if err != nil {
+		http.Error(w, "Failed to save response", http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect to thank you page or home
+	http.Redirect(w, r, "/?submitted=true", http.StatusSeeOther)
 }
 
 // Admin handlers

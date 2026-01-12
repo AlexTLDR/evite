@@ -1,6 +1,10 @@
 package templates
 
-templ Home(lang string) {
+import (
+	"github.com/AlexTLDR/evite/internal/database"
+)
+
+templ Home(lang string, invitation *database.Invitation) {
 	@PublicLayout("Evite - Invitație Botez", lang) {
 		<div class="landing-page" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Top Right Controls -->
@@ -261,6 +265,11 @@ templ Home(lang string) {
 								}
 							</div>
 						</div>
+
+					<!-- RSVP Form Section -->
+					<div class="mt-8">
+						@RSVPForm(lang, invitation)
+					</div>
 
 					</div>
 				</div>
