@@ -138,12 +138,13 @@ templ Home(lang string) {
 					<!-- Card Image with Text Overlay -->
 					<div class="relative w-96 max-w-md shadow-2xl">
 						<!-- Background Card Image -->
-						<img src="/static/images/card.png" alt="Invitation Card" class="w-full h-auto rounded-lg"/>
+						<img src="/static/images/long-card.png" alt="Invitation Card" class="w-full h-auto rounded-lg"/>
 
-						<!-- Text Overlay in the Middle -->
-						<div class="invitation-card-overlay">
-							<div class="max-h-96 overflow-y-auto px-4 py-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-								<!-- Greeting -->
+						<!-- Text Overlay - Positioned Between Decorations -->
+						<div class="absolute inset-x-0 top-[15%] bottom-[5%] flex items-start justify-center px-8 overflow-y-auto scrollbar-thin">
+							<div class="w-full">
+								<div class="text-center px-4">
+									<!-- Greeting -->
 								<p class="text-xl mb-4 font-semibold text-gray-800">
 									if lang == "ro" {
 										Hei! Eu sunt
@@ -269,6 +270,7 @@ templ Home(lang string) {
 							</div>
 						</div>
 					</div>
+				</div>
 				</div>
 
 				<!-- Random Popup Decorations -->
