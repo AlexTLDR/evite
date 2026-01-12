@@ -138,7 +138,19 @@ templ Home(lang string) {
 							</button>
 						</div>
 						<!-- Background Card Image -->
-						<img src="/static/images/long-card.png" alt="Invitation Card" class="w-full h-auto rounded-lg"/>
+						<img
+							x-show="!isDark"
+							src="/static/images/long-card.png"
+							alt="Invitation Card"
+							class="w-full h-auto rounded-lg"
+						/>
+						<img
+							x-show="isDark"
+							x-cloak
+							src="/static/images/long-card-dark.png"
+							alt="Invitation Card"
+							class="w-full h-auto rounded-lg"
+						/>
 
 						<!-- Text Overlay - Positioned Between Decorations -->
 						<div class="absolute inset-x-0 top-[15%] bottom-[5%] flex items-start justify-center px-8 overflow-y-auto scrollbar-thin">
