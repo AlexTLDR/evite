@@ -392,6 +392,7 @@ body {
     text-align: center;
     z-index: 10;
     width: 80%;
+    max-height: 85%;
 }
 
 .invitation-card-overlay p {
@@ -404,6 +405,29 @@ body {
 .invitation-card-overlay .btn {
     margin-top: 1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Scrollbar Styles */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
 }
 
 /* Responsive Design */
