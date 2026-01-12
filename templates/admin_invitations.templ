@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse) {
-	@AdminLayout("Invitații - Evite Admin", "ro", userName) {
+templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse, lightTheme string, darkTheme string) {
+	@AdminLayout("Invitații - Evite Admin", "ro", userName, lightTheme, darkTheme) {
 		<div class="page-header">
 			<h2>Lista Invitații</h2>
 			<a href="/admin/invitations/new" class="btn btn-primary">+ Invitație Nouă</a>

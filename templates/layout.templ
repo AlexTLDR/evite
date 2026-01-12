@@ -1,35 +1,39 @@
 package templates
 
-templ Layout(title string, lang string) {
+script themeScript(lightTheme, darkTheme string) {
+	// Set theme immediately to prevent flash
+	(function() {
+		const darkMode = localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
+	})();
+}
+
+script alpineThemeStore(lightTheme, darkTheme string) {
+	// Initialize theme store for Alpine
+	document.addEventListener('alpine:init', () => {
+		Alpine.store('theme', {
+			dark: localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+			toggle() {
+				this.dark = !this.dark;
+				localStorage.setItem('darkMode', this.dark);
+				document.documentElement.setAttribute('data-theme', this.dark ? darkTheme : lightTheme);
+			}
+		});
+	});
+}
+
+templ Layout(title string, lang string, lightTheme string, darkTheme string) {
 	<!DOCTYPE html>
 	<html lang={ lang }>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>{ title }</title>
-			<script>
-				// Set theme immediately to prevent flash
-				(function() {
-					const darkMode = localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-					document.documentElement.setAttribute('data-theme', darkMode ? 'coffee' : 'cupcake');
-				})();
-			</script>
+			@themeScript(lightTheme, darkTheme)
 			<link rel="stylesheet" href="/static/css/tailwind.css"/>
 			<link rel="stylesheet" href="/static/css/style.css"/>
 			<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-			<script>
-				// Initialize theme store for Alpine
-				document.addEventListener('alpine:init', () => {
-					Alpine.store('theme', {
-						dark: localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches),
-						toggle() {
-							this.dark = !this.dark;
-							localStorage.setItem('darkMode', this.dark);
-							document.documentElement.setAttribute('data-theme', this.dark ? 'coffee' : 'cupcake');
-						}
-					});
-				});
-			</script>
+			@alpineThemeStore(lightTheme, darkTheme)
 		</head>
 		<body class="min-h-screen bg-base-300">
 			{ children... }
@@ -37,16 +41,16 @@ templ Layout(title string, lang string) {
 	</html>
 }
 
-templ PublicLayout(title string, lang string) {
-	@Layout(title, lang) {
+templ PublicLayout(title string, lang string, lightTheme string, darkTheme string) {
+	@Layout(title, lang, lightTheme, darkTheme) {
 		<div class="public-container">
 			{ children... }
 		</div>
 	}
 }
 
-templ AdminLayout(title string, lang string, userName string) {
-	@Layout(title, lang) {
+templ AdminLayout(title string, lang string, userName string, lightTheme string, darkTheme string) {
+	@Layout(title, lang, lightTheme, darkTheme) {
 		<div class="admin-container">
 			<nav class="admin-nav">
 				<div class="nav-brand">

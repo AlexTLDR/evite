@@ -1,7 +1,7 @@
 package templates
 
-templ Home(lang string) {
-	@PublicLayout("Evite - Invitație Botez", lang) {
+templ Home(lang string, lightTheme string, darkTheme string) {
+	@PublicLayout("Evite - Invitație Botez", lang, lightTheme, darkTheme) {
 		<div class="landing-page" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Wrapper for card and decorations -->
 			<div
@@ -157,7 +157,7 @@ templ Home(lang string) {
 							<div class="w-full">
 								<div class="text-center px-4">
 									<!-- Greeting -->
-								<p class="text-xl mb-4 font-semibold text-gray-800">
+								<p class="text-xl mb-4 font-semibold text-primary">
 									if lang == "ro" {
 										Hei! Eu sunt
 									} else {
@@ -166,12 +166,12 @@ templ Home(lang string) {
 								</p>
 
 								<!-- Child's Name -->
-								<h2 class="text-5xl mb-6 mt-2 font-bold text-gray-900" style="font-family: 'Brush Script MT', cursive;">
+								<h2 class="text-5xl mb-6 mt-2 font-bold text-primary" style="font-family: 'Brush Script MT', cursive;">
 									Anya Maria
 								</h2>
 
 								<!-- Fun Message -->
-								<p class="text-lg mb-6 leading-relaxed text-gray-800 font-medium">
+								<p class="text-lg mb-6 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
 										și abia aștept să mă cunoști!<br/>
 										Vino la botezul meu pe
@@ -183,15 +183,15 @@ templ Home(lang string) {
 
 								<!-- Date -->
 								<div class="flex items-center justify-center gap-6 my-6">
-									<span class="text-base text-gray-700 font-medium">
+									<span class="text-base text-primary font-medium">
 										if lang == "ro" {
 											duminică
 										} else {
 											Sunday
 										}
 									</span>
-									<span class="text-4xl font-bold text-gray-900">19</span>
-									<span class="text-base text-gray-700 font-medium">
+									<span class="text-4xl font-bold text-primary">19</span>
+									<span class="text-base text-primary font-medium">
 										if lang == "ro" {
 											aprilie 2026
 										} else {
@@ -209,16 +209,16 @@ templ Home(lang string) {
 
 								<!-- Church Details -->
 								<div class="mb-6">
-									<p class="text-sm mb-2 text-gray-700 font-medium" style="letter-spacing: 0.05em;">
+									<p class="text-sm mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
 										if lang == "ro" {
 											Ceremonia religioasă va avea loc la
 										} else {
 											The religious ceremony will take place at
 										}
 									</p>
-									<p class="font-semibold text-base mb-1 text-gray-900">Biserica Apărătorii Patriei I</p>
-									<p class="text-sm mt-1 text-gray-700">Strada Panselelor 31, București</p>
-									<p class="text-sm text-gray-700 mt-1">
+									<p class="font-semibold text-base mb-1 text-primary">Biserica Apărătorii Patriei I</p>
+									<p class="text-sm mt-1 text-primary">Strada Panselelor 31, București</p>
+									<p class="text-sm text-primary mt-1">
 										if lang == "ro" {
 											la ora 14:00
 										} else {
@@ -227,12 +227,12 @@ templ Home(lang string) {
 									</p>
 									<div class="mt-3 text-center">
 										if lang == "ro" {
-											<a href="https://maps.google.com/?q=Biserica+Apărătorii+Patriei+I,+Strada+Panselelor+31,+București" target="_blank" class="btn btn-sm btn-ghost text-gray-800 hover:bg-white/50">
+											<a href="https://maps.google.com/?q=Biserica+Apărătorii+Patriei+I,+Strada+Panselelor+31,+București" target="_blank" class="btn btn-sm btn-ghost text-primary hover:bg-white/50">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-[1.2em] inline"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
 												Hartă
 											</a>
 										} else {
-											<a href="https://maps.google.com/?q=Biserica+Apărătorii+Patriei+I,+Strada+Panselelor+31,+București" target="_blank" class="btn btn-sm btn-ghost text-gray-800 hover:bg-white/50">
+											<a href="https://maps.google.com/?q=Biserica+Apărătorii+Patriei+I,+Strada+Panselelor+31,+București" target="_blank" class="btn btn-sm btn-ghost text-primary hover:bg-white/50">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-[1.2em] inline"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
 												Map
 											</a>
@@ -249,16 +249,16 @@ templ Home(lang string) {
 
 								<!-- Restaurant Details -->
 								<div class="mb-6">
-									<p class="text-sm mb-2 text-gray-700 font-medium" style="letter-spacing: 0.05em;">
+									<p class="text-sm mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
 										if lang == "ro" {
 											Vom continua împreună la
 										} else {
 											We will continue together at
 										}
 									</p>
-									<p class="font-semibold text-base mb-1 text-gray-900">Noor By The Pool</p>
-									<p class="text-sm mt-1 text-gray-700">Splaiul Unirii 9D, Popești-Leordeni</p>
-									<p class="text-sm text-gray-700 mt-1">
+									<p class="font-semibold text-base mb-1 text-primary">Noor By The Pool</p>
+									<p class="text-sm mt-1 text-primary">Splaiul Unirii 9D, Popești-Leordeni</p>
+									<p class="text-sm text-primary mt-1">
 										if lang == "ro" {
 											la ora 19:00
 										} else {
@@ -267,12 +267,12 @@ templ Home(lang string) {
 									</p>
 									<div class="mt-3 text-center">
 										if lang == "ro" {
-											<a href="https://maps.google.com/?q=Noor+By+The+Pool,+Splaiul+Unirii+9D,+Popești-Leordeni" target="_blank" class="btn btn-sm btn-ghost text-gray-800 hover:bg-white/50">
+											<a href="https://maps.google.com/?q=Noor+By+The+Pool,+Splaiul+Unirii+9D,+Popești-Leordeni" target="_blank" class="btn btn-sm btn-ghost text-primary hover:bg-white/50">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-[1.2em] inline"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
 												Hartă
 											</a>
 										} else {
-											<a href="https://maps.google.com/?q=Noor+By+The+Pool,+Splaiul+Unirii+9D,+Popești-Leordeni" target="_blank" class="btn btn-sm btn-ghost text-gray-800 hover:bg-white/50">
+											<a href="https://maps.google.com/?q=Noor+By+The+Pool,+Splaiul+Unirii+9D,+Popești-Leordeni" target="_blank" class="btn btn-sm btn-ghost text-primary hover:bg-white/50">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-[1.2em] inline"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg>
 												Map
 											</a>

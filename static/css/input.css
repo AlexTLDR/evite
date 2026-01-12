@@ -1,6 +1,7 @@
 @import "tailwindcss";
+
 @plugin "daisyui" {
-  themes: cupcake --default, coffee --prefersdark;
+  themes: autumn --default, night --prefersdark;
 }
 
 /* Scan templates for Tailwind classes */
