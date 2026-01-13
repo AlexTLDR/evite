@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
@@ -32,7 +33,16 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	templates.Home(string(lang), themes.Light, themes.Dark, invitation).Render(r.Context(), w)
+	// Check if RSVP deadline has passed
+	now := time.Now()
+	deadlinePassed := now.After(s.config.RSVPDeadline)
+
+	// Debug logging
+	fmt.Printf("DEBUG: Current time: %v\n", now)
+	fmt.Printf("DEBUG: RSVP Deadline: %v\n", s.config.RSVPDeadline)
+	fmt.Printf("DEBUG: Deadline passed: %v\n", deadlinePassed)
+
+	templates.Home(string(lang), themes.Light, themes.Dark, invitation, deadlinePassed).Render(r.Context(), w)
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {
@@ -55,6 +65,16 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lang := i18n.GetLanguageFromRequest(r)
+
+	// Check if RSVP deadline has passed
+	if time.Now().After(s.config.RSVPDeadline) {
+		errorMsg := "RSVP deadline has passed"
+		if lang == "ro" {
+			errorMsg = "Termenul limită pentru confirmare a trecut"
+		}
+		http.Error(w, errorMsg, http.StatusForbidden)
+		return
+	}
 
 	// Parse form
 	if err := r.ParseForm(); err != nil {

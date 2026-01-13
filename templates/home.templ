@@ -6,7 +6,7 @@ import (
 	"github.com/AlexTLDR/evite/internal/database"
 )
 
-templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation) {
+templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation, deadlinePassed bool) {
 	@PublicLayout("Evite - Invitație Botez", lang, lightTheme, darkTheme) {
 		<div class="landing-page" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Wrapper for card and decorations -->
@@ -289,16 +289,28 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 								<!-- Divider -->
 								<div class="divider opacity-30"></div>
 
-								<!-- RSVP Button -->
-								<div class="mt-4 mb-4 text-center">
-									<button
-										type="button"
-										@click="$store.rsvp.show = true; setTimeout(() => document.getElementById('rsvp-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
-										class="btn btn-soft btn-primary text-lg"
-									>
-										RSVP
-									</button>
-								</div>
+								<!-- RSVP Button or Deadline Message -->
+								if deadlinePassed {
+									<div class="mt-4 mb-4 text-center">
+										<p class="text-error font-semibold text-lg">
+											if lang == "ro" {
+												Timpul de răspuns a expirat
+											} else {
+												RSVP deadline has expired
+											}
+										</p>
+									</div>
+								} else {
+									<div class="mt-4 mb-4 text-center">
+										<button
+											type="button"
+											@click="$store.rsvp.show = true; setTimeout(() => document.getElementById('rsvp-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
+											class="btn btn-soft btn-primary text-lg"
+										>
+											RSVP
+										</button>
+									</div>
+								}
 
 					<!-- Success Message (shown after submission) -->
 					<script>
@@ -330,23 +342,24 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 				</div>
 
 				<!-- RSVP Form Section - Below the card -->
-				<div
-					id="rsvp-form"
-					class="rsvp-form-container mt-8 w-96 max-w-md"
-					x-show="$store.rsvp.show"
-					x-cloak
-					x-transition:enter="transition ease-out duration-300"
-					x-transition:enter-start="opacity-0 transform translate-y-4"
-					x-transition:enter-end="opacity-100 transform translate-y-0"
-					x-init="
-						// Auto-open RSVP form if token is in URL
-						const urlParams = new URLSearchParams(window.location.search);
-						if (urlParams.has('token')) {
-							$store.rsvp.show = true;
-							setTimeout(() => document.getElementById('rsvp-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-						}
-					"
-				>
+				if !deadlinePassed {
+					<div
+						id="rsvp-form"
+						class="rsvp-form-container mt-8 w-96 max-w-md"
+						x-show="$store.rsvp.show"
+						x-cloak
+						x-transition:enter="transition ease-out duration-300"
+						x-transition:enter-start="opacity-0 transform translate-y-4"
+						x-transition:enter-end="opacity-100 transform translate-y-0"
+						x-init="
+							// Auto-open RSVP form if token is in URL
+							const urlParams = new URLSearchParams(window.location.search);
+							if (urlParams.has('token')) {
+								$store.rsvp.show = true;
+								setTimeout(() => document.getElementById('rsvp-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+							}
+						"
+					>
 					<form
 						method="POST"
 						action="/rsvp/submit"
@@ -588,6 +601,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						</div>
 					</form>
 				</div>
+			}
 				</div>
 
 				<!-- Random Popup Decorations -->

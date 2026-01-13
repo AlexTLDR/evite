@@ -7,82 +7,134 @@ import (
 
 templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse, lightTheme string, darkTheme string) {
 	@AdminLayout("Invitații - Evite Admin", "ro", userName, lightTheme, darkTheme) {
-		<div class="page-header">
-			<h2>Lista Invitații</h2>
-			<div class="header-actions">
-				<a href="/admin/invitations/download-csv" class="btn btn-success">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline">
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+			<h2 class="text-2xl sm:text-3xl font-bold">Lista Invitații</h2>
+			<div class="flex flex-wrap gap-2">
+				<a href="/admin/invitations/download-csv" class="btn btn-success btn-sm sm:btn-md">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 sm:w-5 sm:h-5">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
 					</svg>
-					Descarcă CSV
+					<span class="hidden sm:inline">Descarcă CSV</span>
+					<span class="sm:hidden">CSV</span>
 				</a>
-				<a href="/admin/invitations/new" class="btn btn-primary">+ Invitație Nouă</a>
+				<a href="/admin/invitations/new" class="btn btn-primary btn-sm sm:btn-md">
+					<span class="hidden sm:inline">+ Invitație Nouă</span>
+					<span class="sm:hidden">+ Nouă</span>
+				</a>
 			</div>
 		</div>
 		if len(invitations) == 0 {
-			<div class="empty-state">
-				<p>Nu există invitații încă.</p>
-				<a href="/admin/invitations/new" class="btn btn-primary">Creează prima invitație</a>
+			<div class="alert alert-info">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+				<div>
+					<p>Nu există invitații încă.</p>
+					<a href="/admin/invitations/new" class="btn btn-primary btn-sm mt-2">Creează prima invitație</a>
+				</div>
 			</div>
 		} else {
-			<table class="invitations-table">
+			<div class="overflow-x-auto">
+				<table class="table table-zebra w-full">
 				<thead>
 					<tr>
-						<th>Invitat</th>
-						<th>Telefon</th>
-						<th>Status</th>
-						<th>Răspuns</th>
+						<th class="hidden sm:table-cell">Invitat</th>
+						<th class="hidden md:table-cell">Telefon</th>
+						<th class="hidden lg:table-cell">Status</th>
+						<th class="hidden lg:table-cell">Răspuns</th>
+						<th>Info</th>
 						<th>Acțiuni</th>
 					</tr>
 				</thead>
 				<tbody>
 					for _, inv := range invitations {
 						<tr>
-							<td>{ inv.GuestName }</td>
-							<td>{ inv.Phone }</td>
-							<td>
-								<div class="status-badges">
+							<!-- Desktop: Name column -->
+							<td class="hidden sm:table-cell">
+								<div class="font-semibold">{ inv.GuestName }</div>
+							</td>
+							<!-- Desktop: Phone column -->
+							<td class="hidden md:table-cell">{ inv.Phone }</td>
+							<!-- Desktop: Status column -->
+							<td class="hidden lg:table-cell">
+								<div class="flex flex-wrap gap-1">
 									if inv.SentAt.Valid {
-										<span class="badge badge-success">Trimis</span>
+										<span class="badge badge-success badge-sm">Trimis</span>
 									} else {
-										<span class="badge badge-warning">Netrimis</span>
+										<span class="badge badge-warning badge-sm">Netrimis</span>
 									}
 									if inv.OpenedAt.Valid {
-										<span class="badge badge-info">Deschis</span>
+										<span class="badge badge-info badge-sm">Deschis</span>
 									}
 									if inv.RespondedAt.Valid {
-										<span class="badge badge-primary">Răspuns</span>
+										<span class="badge badge-primary badge-sm">Răspuns</span>
+									}
+								</div>
+							</td>
+							<!-- Desktop: Response column -->
+							<td class="hidden lg:table-cell">
+								if inv.Response != nil {
+									if inv.Response.Attending {
+										<div class="flex flex-wrap gap-1 items-center">
+											<span class="text-success font-semibold">✓ Participă</span>
+											if inv.Response.PlusOne {
+												<span class="badge badge-sm">+1</span>
+											}
+											if inv.Response.KidsCount > 0 {
+												<span class="badge badge-sm">{ fmt.Sprintf("%d copii", inv.Response.KidsCount) }</span>
+											}
+										</div>
+									} else {
+										<span class="text-error font-semibold">✗ Nu participă</span>
+									}
+								} else {
+									<span class="text-base-content/50">-</span>
+								}
+							</td>
+							<!-- Mobile: Compact info column -->
+							<td class="lg:hidden">
+								<div class="text-sm">
+									<div class="font-semibold">{ inv.GuestName }</div>
+									<div class="text-xs opacity-70">{ inv.Phone }</div>
+									<div class="flex flex-wrap gap-1 mt-1">
+										if inv.SentAt.Valid {
+											<span class="badge badge-success badge-xs">T</span>
+										}
+										if inv.OpenedAt.Valid {
+											<span class="badge badge-info badge-xs">D</span>
+										}
+										if inv.RespondedAt.Valid {
+											<span class="badge badge-primary badge-xs">R</span>
+										}
+									</div>
+									if inv.Response != nil {
+										if inv.Response.Attending {
+											<div class="text-success text-xs mt-1">
+												✓ Participă
+												if inv.Response.PlusOne {
+													<span>+1</span>
+												}
+												if inv.Response.KidsCount > 0 {
+													<span>({ fmt.Sprintf("%d copii", inv.Response.KidsCount) })</span>
+												}
+											</div>
+										} else {
+											<div class="text-error text-xs mt-1">✗ Nu participă</div>
+										}
 									}
 								</div>
 							</td>
 							<td>
-								if inv.Response != nil {
-									if inv.Response.Attending {
-										<span class="attendance-yes">✓ Participă</span>
-										if inv.Response.PlusOne {
-											<span class="plus-one">+1</span>
-										}
-										if inv.Response.KidsCount > 0 {
-											<span class="kids">{ fmt.Sprintf("%d copii", inv.Response.KidsCount) }</span>
-										}
-									} else {
-										<span class="attendance-no">✗ Nu participă</span>
-									}
-								} else {
-									<span class="no-response">-</span>
-								}
-							</td>
-							<td>
-								<div class="action-buttons" x-data={ fmt.Sprintf("{ copyMessage() { navigator.clipboard.writeText(`%s`).then(() => alert('Mesaj copiat!')) } }", inv.InviteMessage) }>
+								<div class="flex flex-wrap gap-1" x-data={ fmt.Sprintf("{ copyMessage() { navigator.clipboard.writeText(`%s`).then(() => alert('Mesaj copiat!')) } }", inv.InviteMessage) }>
+									<!-- Message button (if comment exists) -->
 									if inv.Response != nil && inv.Response.Comment.Valid {
 										<button
-											class="btn btn-sm btn-accent"
+											class="btn btn-xs sm:btn-sm btn-accent"
 											@click={ fmt.Sprintf("document.getElementById('message-modal-%d').showModal()", inv.ID) }
+											title="Vezi mesaj"
 										>
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
 											</svg>
-											Mesaj
+											<span class="hidden sm:inline">Mesaj</span>
 										</button>
 										<!-- Message Modal -->
 										<dialog id={ fmt.Sprintf("message-modal-%d", inv.ID) } class="modal">
@@ -102,27 +154,44 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 											</form>
 										</dialog>
 									}
+									<!-- Copy message button -->
 									<button
-										class="btn btn-sm btn-secondary"
+										class="btn btn-xs sm:btn-sm btn-secondary"
 										@click="copyMessage()"
+										title="Copiază mesaj invitație"
 									>
-										Copiază Mesaj
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+										</svg>
+										<span class="hidden md:inline">Copiază</span>
 									</button>
+									<!-- Mark as sent button -->
 									if !inv.SentAt.Valid {
-										<form method="POST" action="/admin/invitations/mark-sent" style="display: inline;">
+										<form method="POST" action="/admin/invitations/mark-sent" class="inline">
 											<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
-											<button type="submit" class="btn btn-sm btn-primary">
-												Marchează Trimis
+											<button type="submit" class="btn btn-xs sm:btn-sm btn-primary" title="Marchează ca trimis">
+												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+												</svg>
+												<span class="hidden md:inline">Trimis</span>
 											</button>
 										</form>
 									}
-									<a href={ templ.URL(fmt.Sprintf("/admin/invitations/edit/%d", inv.ID)) } class="btn btn-sm btn-info">
-										Editează
+									<!-- Edit button -->
+									<a href={ templ.URL(fmt.Sprintf("/admin/invitations/edit/%d", inv.ID)) } class="btn btn-xs sm:btn-sm btn-info" title="Editează">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+										</svg>
+										<span class="hidden lg:inline">Edit</span>
 									</a>
-									<form method="POST" action="/admin/invitations/delete" style="display: inline;" onsubmit="return confirm('Sigur vrei să ștergi această invitație?')">
+									<!-- Delete button -->
+									<form method="POST" action="/admin/invitations/delete" class="inline" onsubmit="return confirm('Sigur vrei să ștergi această invitație?')">
 										<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
-										<button type="submit" class="btn btn-sm btn-danger">
-											Șterge
+										<button type="submit" class="btn btn-xs sm:btn-sm btn-error" title="Șterge">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+											</svg>
+											<span class="hidden lg:inline">Șterge</span>
 										</button>
 									</form>
 								</div>
@@ -131,6 +200,7 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 					}
 				</tbody>
 			</table>
+			</div>
 		}
 	}
 }

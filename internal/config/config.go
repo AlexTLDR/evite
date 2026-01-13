@@ -72,6 +72,11 @@ func Load() (*Config, error) {
 	}
 	cfg.RSVPDeadline = deadline.In(loc)
 
+	// Debug logging
+	fmt.Printf("CONFIG DEBUG: RSVP_DEADLINE string: %s\n", deadlineStr)
+	fmt.Printf("CONFIG DEBUG: RSVP_DEADLINE parsed: %v\n", cfg.RSVPDeadline)
+	fmt.Printf("CONFIG DEBUG: Current time: %v\n", time.Now())
+
 	return cfg, nil
 }
 
@@ -81,4 +86,3 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
-

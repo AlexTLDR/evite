@@ -55,19 +55,36 @@ templ PublicLayout(title string, lang string, lightTheme string, darkTheme strin
 
 templ AdminLayout(title string, lang string, userName string, lightTheme string, darkTheme string) {
 	@Layout(title, lang, lightTheme, darkTheme) {
-		<div class="admin-container">
-			<nav class="admin-nav">
-				<div class="nav-brand">
-					<h1>Evite Admin</h1>
+		<div class="min-h-screen flex flex-col">
+			<div class="navbar bg-base-300 shadow-lg">
+				<div class="navbar-start">
+					<div class="dropdown">
+						<div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path>
+							</svg>
+						</div>
+						<ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+							<li><a href="/admin">Dashboard</a></li>
+							<li><a href="/admin/invitations">Invitații</a></li>
+							<li class="menu-title">{ userName }</li>
+							<li><a href="/auth/logout" class="text-error">Deconectare</a></li>
+						</ul>
+					</div>
+					<a href="/admin" class="btn btn-ghost text-xl">Evite Admin</a>
 				</div>
-				<div class="nav-links">
-					<a href="/admin">Dashboard</a>
-					<a href="/admin/invitations">Invitații</a>
-					<span class="user-info">{ userName }</span>
-					<a href="/auth/logout" class="logout">Deconectare</a>
+				<div class="navbar-center hidden lg:flex">
+					<ul class="menu menu-horizontal px-1">
+						<li><a href="/admin">Dashboard</a></li>
+						<li><a href="/admin/invitations">Invitații</a></li>
+					</ul>
 				</div>
-			</nav>
-			<main class="admin-main">
+				<div class="navbar-end hidden lg:flex gap-2">
+					<span class="text-sm opacity-70">{ userName }</span>
+					<a href="/auth/logout" class="btn btn-error btn-sm">Deconectare</a>
+				</div>
+			</div>
+			<main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
 				{ children... }
 			</main>
 		</div>

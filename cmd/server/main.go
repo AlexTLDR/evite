@@ -12,7 +12,13 @@ import (
 
 func main() {
 	// Load .env file (ignore error if file doesn't exist)
-	_ = godotenv.Load()
+	// Use Overload to force overwrite any existing environment variables
+	err := godotenv.Overload()
+	if err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	} else {
+		log.Printf(".env file loaded successfully (with overload)")
+	}
 
 	// Load configuration
 	cfg, err := config.Load()
