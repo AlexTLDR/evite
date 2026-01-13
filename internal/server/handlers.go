@@ -154,12 +154,14 @@ func (s *Server) handleAdminInvitations(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	templates.AdminInvitationsList(userName, invitations).Render(r.Context(), w)
+	themes := config.GetThemes()
+	templates.AdminInvitationsList(userName, invitations, themes.Light, themes.Dark).Render(r.Context(), w)
 }
 
 func (s *Server) handleAdminNewInvitation(w http.ResponseWriter, r *http.Request) {
 	_, userName := s.getCurrentUser(r)
-	templates.AdminNewInvitation(userName, "").Render(r.Context(), w)
+	themes := config.GetThemes()
+	templates.AdminNewInvitation(userName, "", themes.Light, themes.Dark).Render(r.Context(), w)
 }
 
 func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Request) {
@@ -169,10 +171,11 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 	}
 
 	_, userName := s.getCurrentUser(r)
+	themes := config.GetThemes()
 
 	// Parse form
 	if err := r.ParseForm(); err != nil {
-		templates.AdminNewInvitation(userName, "Eroare la procesarea formularului").Render(r.Context(), w)
+		templates.AdminNewInvitation(userName, "Eroare la procesarea formularului", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -181,7 +184,7 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 
 	// Validate
 	if guestName == "" || phone == "" {
-		templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii").Render(r.Context(), w)
+		templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -193,10 +196,10 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 	inv, err := s.db.CreateInvitation(guestName, phone, inviteMessageTemplate)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			templates.AdminNewInvitation(userName, "Acest număr de telefon există deja").Render(r.Context(), w)
+			templates.AdminNewInvitation(userName, "Acest număr de telefon există deja", themes.Light, themes.Dark).Render(r.Context(), w)
 			return
 		}
-		templates.AdminNewInvitation(userName, "Eroare la crearea invitației").Render(r.Context(), w)
+		templates.AdminNewInvitation(userName, "Eroare la crearea invitației", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -241,6 +244,7 @@ func (s *Server) handleAdminMarkSent(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleAdminEditInvitation(w http.ResponseWriter, r *http.Request) {
 	_, userName := s.getCurrentUser(r)
+	themes := config.GetThemes()
 
 	// Extract ID from URL path
 	idStr := r.URL.Path[len("/admin/invitations/edit/"):]
@@ -253,7 +257,7 @@ func (s *Server) handleAdminEditInvitation(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	templates.AdminEditInvitation(userName, invitation, "").Render(r.Context(), w)
+	templates.AdminEditInvitation(userName, invitation, "", themes.Light, themes.Dark).Render(r.Context(), w)
 }
 
 func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Request) {
@@ -263,6 +267,7 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 	}
 
 	_, userName := s.getCurrentUser(r)
+	themes := config.GetThemes()
 
 	// Extract ID from URL path
 	idStr := r.URL.Path[len("/admin/invitations/update/"):]
@@ -279,13 +284,13 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 
 	if guestName == "" || phone == "" {
 		invitation, _ := s.db.GetInvitationByID(id)
-		templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii").Render(r.Context(), w)
+		templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
 	if err := s.db.UpdateInvitation(id, guestName, phone); err != nil {
 		invitation, _ := s.db.GetInvitationByID(id)
-		templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.").Render(r.Context(), w)
+		templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 

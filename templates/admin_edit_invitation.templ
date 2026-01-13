@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-templ AdminEditInvitation(userName string, invitation *database.Invitation, errorMsg string) {
-	@AdminLayout("Editează Invitație - Evite Admin", "ro", userName) {
+templ AdminEditInvitation(userName string, invitation *database.Invitation, errorMsg string, lightTheme string, darkTheme string) {
+	@AdminLayout("Editează Invitație - Evite Admin", "ro", userName, lightTheme, darkTheme) {
 		<div class="page-header">
 			<h2>Editează Invitație</h2>
 			<a href="/admin/invitations" class="btn btn-secondary">← Înapoi la listă</a>

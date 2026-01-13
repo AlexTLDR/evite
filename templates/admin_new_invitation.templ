@@ -1,7 +1,7 @@
 package templates
 
-templ AdminNewInvitation(userName string, errorMsg string) {
-	@AdminLayout("Invitație Nouă - Evite Admin", "ro", userName) {
+templ AdminNewInvitation(userName string, errorMsg string, lightTheme string, darkTheme string) {
+	@AdminLayout("Invitație Nouă - Evite Admin", "ro", userName, lightTheme, darkTheme) {
 		<div class="page-header">
 			<h2>Invitație Nouă</h2>
 			<a href="/admin/invitations" class="btn btn-secondary">← Înapoi la listă</a>

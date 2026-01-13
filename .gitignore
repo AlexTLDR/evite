@@ -42,3 +42,6 @@ static/css/tailwind.css
 # Editor/IDE
 .idea/
 .vscode/
+
+# Binary files
+bin/
