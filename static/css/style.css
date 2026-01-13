@@ -267,6 +267,13 @@ body {
     position: relative;
     width: 100%;
     max-width: 400px;
+    overflow: visible; /* Allow decorations to show outside */
+}
+
+/* Prevent decorations from causing page scroll */
+.invitation-wrapper .decoration-element {
+    max-width: 100vw; /* Constrain to viewport width */
+    max-height: 100vh; /* Constrain to viewport height */
 }
 
 /* Card container */
@@ -285,6 +292,8 @@ body {
     pointer-events: none;
     transform: scale(0) rotate(0deg);
     transition: none;
+    /* Prevent causing page expansion */
+    will-change: transform, opacity;
 }
 
 .decoration-element.svg-ladybug {

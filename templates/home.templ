@@ -29,24 +29,24 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 					},
 
 					getRandomPosition() {
-						// Random position around the card edges
+						// Random position around the card edges (constrained to prevent page expansion)
 						const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
 						let top, left;
 
 						switch(side) {
-							case 0: // top
+							case 0: // top - keep within -10% to 10%
 								top = Math.random() * 20 - 10 + '%';
 								left = Math.random() * 100 + '%';
 								break;
-							case 1: // right
+							case 1: // right - constrain to max 95% to prevent horizontal scroll
 								top = Math.random() * 100 + '%';
-								left = Math.random() * 20 + 90 + '%';
+								left = Math.random() * 15 + 85 + '%';
 								break;
-							case 2: // bottom
-								top = Math.random() * 20 + 90 + '%';
+							case 2: // bottom - constrain to max 95% to prevent vertical scroll
+								top = Math.random() * 15 + 80 + '%';
 								left = Math.random() * 100 + '%';
 								break;
-							case 3: // left
+							case 3: // left - keep within -10% to 10%
 								top = Math.random() * 100 + '%';
 								left = Math.random() * 20 - 10 + '%';
 								break;
