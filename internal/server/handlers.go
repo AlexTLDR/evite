@@ -36,13 +36,90 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement RSVP form
-	w.Write([]byte("RSVP Form - Coming soon"))
+	// Extract token from URL path
+	token := r.URL.Path[len("/rsvp/"):]
+	if token == "" {
+		// Redirect to home page without token
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// Redirect to home page with token as query parameter
+	http.Redirect(w, r, "/?token="+token, http.StatusSeeOther)
 }
 
 func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement RSVP submission
-	w.Write([]byte("RSVP Submit - Coming soon"))
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	lang := i18n.GetLanguageFromRequest(r)
+
+	// Parse form
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	// Get form values
+	token := r.FormValue("token")
+	attending := r.FormValue("attending") == "yes"
+	guestName := strings.TrimSpace(r.FormValue("guest_name"))
+	phone := strings.TrimSpace(r.FormValue("phone"))
+	hasPartner := r.FormValue("has_partner") == "true"
+	kidsCountStr := r.FormValue("kids_count")
+	comment := strings.TrimSpace(r.FormValue("comment"))
+
+	// Validate required fields
+	if guestName == "" || phone == "" {
+		http.Error(w, "Name and phone are required", http.StatusBadRequest)
+		return
+	}
+
+	// Parse kids count
+	kidsCount := 0
+	if kidsCountStr != "" {
+		fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
+	}
+
+	// Get invitation by token
+	var invitationID int64
+	if token != "" {
+		invitation, err := s.db.GetInvitationByToken(token)
+		if err != nil {
+			http.Error(w, "Invalid invitation token", http.StatusBadRequest)
+			return
+		}
+		invitationID = invitation.ID
+	} else {
+		// If no token, create a new invitation
+		invitation, err := s.db.CreateInvitation(guestName, phone, "")
+		if err != nil {
+			http.Error(w, "Failed to create invitation", http.StatusInternalServerError)
+			return
+		}
+		invitationID = invitation.ID
+	}
+
+	// Create response
+	plusOneName := ""
+	if hasPartner {
+		plusOneName = "Partner" // We don't collect partner name in this form
+	}
+
+	_, err := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, comment)
+	if err != nil {
+		http.Error(w, "Failed to save response", http.StatusInternalServerError)
+		return
+	}
+
+	// Redirect to thank you page with language
+	redirectURL := "/?submitted=true&lang=" + string(lang)
+	if token != "" {
+		redirectURL += "&token=" + token
+	}
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
 // Admin handlers
