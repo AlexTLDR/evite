@@ -1,6 +1,8 @@
 package templates
 
-templ Home(lang string, lightTheme string, darkTheme string) {
+import "github.com/AlexTLDR/evite/internal/database"
+
+templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation) {
 	@PublicLayout("Evite - Invitație Botez", lang, lightTheme, darkTheme) {
 		<div class="landing-page" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Wrapper for card and decorations -->
@@ -279,9 +281,269 @@ templ Home(lang string, lightTheme string, darkTheme string) {
 										}
 									</div>
 								</div>
+
+								<!-- Divider -->
+								<div class="divider opacity-30"></div>
+
+								<!-- RSVP Button -->
+								<div class="mt-4 mb-4 text-center">
+									<button
+										type="button"
+										@click="$store.rsvp.show = true; setTimeout(() => document.getElementById('rsvp-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
+										class="btn btn-primary btn-wide text-lg"
+									>
+										RSVP
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
+				</div>
+
+				<!-- RSVP Form Section - Below the card -->
+				<div
+					id="rsvp-form"
+					class="rsvp-form-container mt-8 w-96 max-w-md"
+					x-show="$store.rsvp.show"
+					x-cloak
+					x-transition:enter="transition ease-out duration-300"
+					x-transition:enter-start="opacity-0 transform translate-y-4"
+					x-transition:enter-end="opacity-100 transform translate-y-0"
+				>
+					<form
+						method="POST"
+						action="/rsvp/submit"
+						class="bg-base-100 rounded-lg shadow-xl p-6"
+						x-data="{
+							attending: '',
+							hasPartner: false,
+							kidsCount: 0
+						}"
+					>
+						if invitation != nil {
+							<input type="hidden" name="token" value={ invitation.Token }/>
+						}
+
+						<!-- Title -->
+						<h3 class="text-center text-lg font-semibold mb-6">
+							if lang == "ro" {
+								Doriti sa participati?
+							} else {
+								Will you attend?
+							}
+						</h3>
+
+						<!-- Attending Buttons -->
+						<div class="flex flex-col gap-4 mb-6">
+							<button
+								type="button"
+								@click="attending = 'yes'"
+								class="btn btn-lg btn-success text-white font-semibold rounded-full w-full"
+							>
+								if lang == "ro" {
+									Da, confirm prezenta!
+								} else {
+									Yes, I'll be there!
+								}
+							</button>
+
+							<button
+								type="button"
+								@click="attending = 'no'"
+								class="btn btn-lg btn-error text-white font-semibold rounded-full w-full"
+							>
+								if lang == "ro" {
+									Nu, nu pot sa particip!
+								} else {
+									No, I can't make it!
+								}
+							</button>
+						</div>
+						<input type="hidden" name="attending" :value="attending"/>
+
+						<!-- Common fields (shown after selecting yes or no) -->
+						<div x-show="attending !== ''" x-cloak class="space-y-4">
+							<!-- Name Input -->
+							<div class="form-control">
+								<label class="label">
+									<span class="label-text">
+										if lang == "ro" {
+											Vă rugăm introduceți următoarele informații:
+										} else {
+											Please provide the following information:
+										}
+									</span>
+								</label>
+								if lang == "ro" {
+									<input
+										type="text"
+										name="guest_name"
+										class="input input-bordered w-full"
+										placeholder="Prenume, Nume"
+										required
+									/>
+								} else {
+									<input
+										type="text"
+										name="guest_name"
+										class="input input-bordered w-full"
+										placeholder="First Name, Last Name"
+										required
+									/>
+								}
+							</div>
+
+							<!-- Phone Input -->
+							<div class="form-control">
+								if lang == "ro" {
+									<input
+										type="tel"
+										name="phone"
+										class="input input-bordered w-full"
+										placeholder="Număr de telefon"
+										required
+									/>
+								} else {
+									<input
+										type="tel"
+										name="phone"
+										class="input input-bordered w-full"
+										placeholder="Phone number"
+										required
+									/>
+								}
+							</div>
+
+							<!-- Additional fields (only if attending YES) -->
+							<div x-show="attending === 'yes'" x-cloak class="space-y-4">
+								<!-- Partner/Spouse Question -->
+								<div class="form-control">
+									<div class="flex gap-3">
+										<button
+											type="button"
+											@click="hasPartner = false"
+											:class="!hasPartner ? 'btn-info' : 'btn-outline btn-info'"
+											class="btn flex-1"
+										>
+											if lang == "ro" {
+												Vin singur/ă
+											} else {
+												Coming alone
+											}
+										</button>
+										<button
+											type="button"
+											@click="hasPartner = true"
+											:class="hasPartner ? 'btn-info' : 'btn-outline btn-info'"
+											class="btn flex-1"
+										>
+											if lang == "ro" {
+												Vin însoțit/ă
+											} else {
+												Coming with partner
+											}
+										</button>
+									</div>
+									<input type="hidden" name="has_partner" :value="hasPartner ? 'true' : 'false'"/>
+								</div>
+
+								<!-- Kids Question -->
+								<div class="form-control">
+									<label class="label">
+										<span class="label-text">
+											if lang == "ro" {
+												Veniți însoțit/ă de copii?
+											} else {
+												Will you bring kids?
+											}
+										</span>
+									</label>
+									<div class="flex gap-3">
+										<button
+											type="button"
+											@click="kidsCount = kidsCount > 0 ? kidsCount : 1"
+											:class="kidsCount > 0 ? 'btn-info' : 'btn-outline btn-info'"
+											class="btn flex-1"
+										>
+											if lang == "ro" {
+												Da
+											} else {
+												Yes
+											}
+										</button>
+										<button
+											type="button"
+											@click="kidsCount = 0"
+											:class="kidsCount === 0 ? 'btn-info' : 'btn-outline btn-info'"
+											class="btn flex-1"
+										>
+											if lang == "ro" {
+												Nu
+											} else {
+												No
+											}
+										</button>
+									</div>
+								</div>
+
+								<!-- Kids Count (only if has kids) -->
+								<div x-show="kidsCount > 0" x-cloak class="form-control">
+									<label class="label">
+										<span class="label-text">
+											if lang == "ro" {
+												Număr copii
+											} else {
+												Number of kids
+											}
+										</span>
+									</label>
+									<input
+										type="number"
+										name="kids_count"
+										min="0"
+										max="10"
+										class="input input-bordered w-full"
+										x-model.number="kidsCount"
+									/>
+								</div>
+
+								<!-- Message -->
+								<div class="form-control">
+									<label class="label">
+										<span class="label-text">
+											if lang == "ro" {
+												Mesaj (opțional)
+											} else {
+												Message (optional)
+											}
+										</span>
+									</label>
+									if lang == "ro" {
+										<textarea
+											name="comment"
+											class="textarea textarea-bordered h-24"
+											placeholder="Lasă-ne un mesaj..."
+										></textarea>
+									} else {
+										<textarea
+											name="comment"
+											class="textarea textarea-bordered h-24"
+											placeholder="Leave us a message..."
+										></textarea>
+									}
+								</div>
+							</div>
+
+							<!-- Submit Button (shown for both yes and no) -->
+							<button type="submit" class="btn btn-primary btn-lg w-full rounded-full">
+								if lang == "ro" {
+									Trimite răspuns
+								} else {
+									Submit response
+								}
+							</button>
+						</div>
+					</form>
 				</div>
 				</div>
 

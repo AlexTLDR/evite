@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/AlexTLDR/evite/internal/config"
+	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/i18n"
 	"github.com/AlexTLDR/evite/templates"
 )
@@ -14,7 +15,24 @@ import (
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	lang := i18n.GetLanguageFromRequest(r)
 	themes := config.GetThemes()
-	templates.Home(string(lang), themes.Light, themes.Dark).Render(r.Context(), w)
+
+	// Check if there's a token in the query parameter
+	token := r.URL.Query().Get("token")
+
+	var invitation *database.Invitation
+	if token != "" {
+		// Try to get invitation by token
+		inv, err := s.db.GetInvitationByToken(token)
+		if err == nil {
+			invitation = inv
+			// Mark as opened if not already
+			if !invitation.OpenedAt.Valid {
+				s.db.MarkAsOpened(invitation.ID)
+			}
+		}
+	}
+
+	templates.Home(string(lang), themes.Light, themes.Dark, invitation).Render(r.Context(), w)
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {

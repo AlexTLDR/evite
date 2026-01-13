@@ -19,6 +19,10 @@ script alpineThemeStore(lightTheme, darkTheme string) {
 				document.documentElement.setAttribute('data-theme', this.dark ? darkTheme : lightTheme);
 			}
 		});
+
+		Alpine.store('rsvp', {
+			show: false
+		});
 	});
 }
 
