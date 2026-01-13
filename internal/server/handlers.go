@@ -9,6 +9,7 @@ import (
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/i18n"
+	"github.com/AlexTLDR/evite/internal/utils"
 	"github.com/AlexTLDR/evite/templates"
 )
 
@@ -97,6 +98,18 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Normalize phone number to E.164 format
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		errorMsg := "Invalid phone number format"
+		if lang == "ro" {
+			errorMsg = "Număr de telefon invalid"
+		}
+		http.Error(w, errorMsg, http.StatusBadRequest)
+		return
+	}
+	phone = normalizedPhone
+
 	// Parse kids count
 	kidsCount := 0
 	if kidsCountStr != "" {
@@ -128,8 +141,8 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 		plusOneName = "Partner" // We don't collect partner name in this form
 	}
 
-	_, err := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, comment)
-	if err != nil {
+	_, respErr := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, comment)
+	if respErr != nil {
 		http.Error(w, "Failed to save response", http.StatusInternalServerError)
 		return
 	}
@@ -207,6 +220,14 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 		templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
+
+	// Normalize phone number to E.164 format
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		templates.AdminNewInvitation(userName, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+		return
+	}
+	phone = normalizedPhone
 
 	// Generate invite message with placeholder
 	lang := i18n.GetLanguageFromRequest(r)
@@ -299,14 +320,23 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	guestName := r.FormValue("guest_name")
-	phone := r.FormValue("phone")
+	guestName := strings.TrimSpace(r.FormValue("guest_name"))
+	phone := strings.TrimSpace(r.FormValue("phone"))
 
 	if guestName == "" || phone == "" {
 		invitation, _ := s.db.GetInvitationByID(id)
 		templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
+
+	// Normalize phone number to E.164 format
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		invitation, _ := s.db.GetInvitationByID(id)
+		templates.AdminEditInvitation(userName, invitation, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+		return
+	}
+	phone = normalizedPhone
 
 	if err := s.db.UpdateInvitation(id, guestName, phone); err != nil {
 		invitation, _ := s.db.GetInvitationByID(id)
