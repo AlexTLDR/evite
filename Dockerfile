@@ -2,10 +2,15 @@
 FROM golang:alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git gcc musl-dev sqlite-dev
+RUN apk add --no-cache git gcc musl-dev sqlite-dev curl
 
 # Set working directory
 WORKDIR /app
+
+# Download Tailwind CSS standalone CLI
+RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
+    chmod +x tailwindcss-linux-x64 && \
+    mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
 
 # Copy go mod files
 COPY go.mod go.sum ./
@@ -19,6 +24,9 @@ RUN go install github.com/a-h/templ/cmd/templ@latest
 
 # Generate templ templates
 RUN templ generate
+
+# Build Tailwind CSS with DaisyUI
+RUN tailwindcss -i static/css/input.css -o static/css/tailwind.css --minify
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
