@@ -7,3 +7,14 @@
 /* Scan templates for Tailwind classes */
 @source "../../templates";
 
+/* Make input borders blend with background */
+@layer utilities {
+  .input-bordered,
+  input.input-bordered,
+  .textarea-bordered,
+  textarea.textarea-bordered {
+    border-color: var(--color-base-100) !important;
+    box-shadow: none !important;
+  }
+}
+

@@ -395,6 +395,27 @@ body {
     background-color: rgba(156, 163, 175, 0.7);
 }
 
+/* RSVP Form - Remove all borders from form controls and sections */
+.form-control,
+.form-control > *,
+div[class*="space-y"] {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* RSVP Form Input Borders - Make them invisible when NOT focused */
+input.input-bordered:not(:focus),
+textarea.textarea-bordered:not(:focus),
+.input.input-bordered:not(:focus),
+.textarea.textarea-bordered:not(:focus),
+input[class*="input-bordered"]:not(:focus),
+textarea[class*="textarea-bordered"]:not(:focus) {
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .public-container {
