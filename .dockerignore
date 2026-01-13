@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.local
+
+# Build artifacts
+bin/
+*.db
+*.log
+
+# Node modules (not needed for Go build)
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+README.md
+LICENSE
+
+# Scripts
+reset_to_card.sh
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
