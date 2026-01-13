@@ -297,6 +297,80 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
 }
 
+func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) {
+	invitations, err := s.db.GetAllInvitationsWithResponses()
+	if err != nil {
+		http.Error(w, "Failed to load invitations", http.StatusInternalServerError)
+		return
+	}
+
+	// Set CSV headers
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=rsvp-list.csv")
+
+	// Write UTF-8 BOM for Excel compatibility
+	w.Write([]byte{0xEF, 0xBB, 0xBF})
+
+	// Write CSV header
+	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,+1,Copii,Mesaj\n"))
+
+	// Write data rows
+	for _, inv := range invitations {
+		// Escape CSV fields
+		name := strings.ReplaceAll(inv.GuestName, "\"", "\"\"")
+		phone := strings.ReplaceAll(inv.Phone, "\"", "\"\"")
+
+		sent := "Nu"
+		if inv.SentAt.Valid {
+			sent = "Da"
+		}
+
+		opened := "Nu"
+		if inv.OpenedAt.Valid {
+			opened = "Da"
+		}
+
+		responded := "Nu"
+		if inv.RespondedAt.Valid {
+			responded = "Da"
+		}
+
+		attending := "-"
+		plusOne := "-"
+		kidsCount := "-"
+		comment := "-"
+
+		if inv.Response != nil {
+			if inv.Response.Attending {
+				attending = "Da"
+			} else {
+				attending = "Nu"
+			}
+
+			if inv.Response.PlusOne {
+				plusOne = "Da"
+			} else {
+				plusOne = "Nu"
+			}
+
+			if inv.Response.KidsCount > 0 {
+				kidsCount = fmt.Sprintf("%d", inv.Response.KidsCount)
+			} else {
+				kidsCount = "0"
+			}
+
+			if inv.Response.Comment.Valid {
+				comment = strings.ReplaceAll(inv.Response.Comment.String, "\"", "\"\"")
+				comment = strings.ReplaceAll(comment, "\n", " ")
+			}
+		}
+
+		line := fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			name, phone, sent, opened, responded, attending, plusOne, kidsCount, comment)
+		w.Write([]byte(line))
+	}
+}
+
 func (s *Server) handleAdminDeleteInvitation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)

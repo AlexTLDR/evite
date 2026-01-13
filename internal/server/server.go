@@ -51,6 +51,7 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(s.handleAdminUpdateInvitation))
 	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(s.handleAdminDeleteInvitation))
 	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(s.handleAdminMarkSent))
+	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(s.handleAdminDownloadCSV))
 }
 
 func (s *Server) Start(addr string) error {

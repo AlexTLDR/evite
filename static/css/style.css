@@ -87,6 +87,12 @@ body {
     color: #2c3e50;
 }
 
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
 /* Table */
 .invitations-table {
     width: 100%;
