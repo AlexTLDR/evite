@@ -389,7 +389,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						<div class="flex flex-col gap-4 mb-6">
 							<button
 								type="button"
-								@click="attending = 'yes'"
+								@click="attending = 'yes'; setTimeout(() => document.getElementById('rsvp-details').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
 								class="btn btn-lg btn-success text-white font-semibold rounded-full w-full"
 							>
 								if lang == "ro" {
@@ -401,7 +401,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 							<button
 								type="button"
-								@click="attending = 'no'"
+								@click="attending = 'no'; setTimeout(() => document.getElementById('rsvp-details').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
 								class="btn btn-lg btn-error text-white font-semibold rounded-full w-full"
 							>
 								if lang == "ro" {
@@ -414,7 +414,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						<input type="hidden" name="attending" :value="attending"/>
 
 						<!-- Common fields (shown after selecting yes or no) -->
-						<div x-show="attending !== ''" x-cloak class="space-y-4">
+						<div id="rsvp-details" x-show="attending !== ''" x-cloak class="space-y-4">
 							<!-- Name Input -->
 							<div class="form-control">
 								<label class="label">
