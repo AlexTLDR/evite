@@ -1,4 +1,4 @@
-n# Build stage
+# Build stage
 FROM golang:alpine AS builder
 
 # Install build dependencies
