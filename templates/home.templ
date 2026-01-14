@@ -8,7 +8,7 @@ import (
 
 templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation, deadlinePassed bool) {
 	@PublicLayout("Evite - Invitație Botez", lang, lightTheme, darkTheme) {
-		<div class="landing-page" x-data="{ get isDark() { return $store.theme?.dark || false } }">
+		<div class="landing-page mx-auto" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Wrapper for card and decorations -->
 			<div
 				class="invitation-wrapper"
@@ -104,9 +104,9 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 				x-init="preloadImages(); showRandomDecorations()"
 			>
 				<!-- Invitation Card Container -->
-				<div class="invitation-card-container px-4">
+				<div class="invitation-card-container">
 					<!-- Card Image with Text Overlay -->
-					<div class="relative w-full max-w-[340px] sm:max-w-md shadow-2xl mx-auto">
+					<div class="relative w-full shadow-2xl mx-auto">
 						<!-- Language Toggle Button - Top Left -->
 						<div class="absolute top-2 left-2 z-[60]">
 							if lang == "ro" {
@@ -345,7 +345,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 				if !deadlinePassed {
 					<div
 						id="rsvp-form"
-						class="rsvp-form-container mt-8 w-full max-w-[340px] sm:max-w-md mx-auto px-4"
+						class="rsvp-form-container mt-8 w-full mx-auto"
 						x-show="$store.rsvp.show"
 						x-cloak
 						x-transition:enter="transition ease-out duration-300"

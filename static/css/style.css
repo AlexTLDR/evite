@@ -310,10 +310,10 @@ html, body {
 /* Wrapper for card and decorations */
 .invitation-wrapper {
     position: relative;
-    width: 100%;
-    max-width: 400px;
     overflow: visible; /* Allow decorations to show outside */
     touch-action: pan-y pinch-zoom;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Prevent decorations from causing page scroll */
@@ -326,8 +326,18 @@ html, body {
 .invitation-card-container {
     position: relative;
     width: 100%;
+    max-width: 100%;
     z-index: 1;
     touch-action: pan-y pinch-zoom;
+}
+
+/* Force card to be full width on mobile */
+@media (max-width: 768px) {
+    .invitation-card-container,
+    .invitation-card-container > div {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
 }
 
 /* Decorative Elements - Random popup animations */
@@ -398,12 +408,7 @@ html, body {
     animation-delay: -7.3s;
 }
 
-/* Card with text overlay and decorations */
-.invitation-card-container {
-    position: relative;
-    width: 100%;
-    max-width: 400px;
-}
+
 
 .invitation-card-overlay {
     position: absolute;
