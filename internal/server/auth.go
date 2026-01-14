@@ -67,7 +67,7 @@ func (s *Server) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if email is in whitelist
+	// Check if email is in the whitelist
 	if !s.isAdminEmail(userInfo.Email) {
 		http.Error(w, "Unauthorized: Your email is not whitelisted", http.StatusUnauthorized)
 		return
@@ -90,7 +90,10 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	session.Values["email"] = ""
 	session.Values["name"] = ""
 	session.Options.MaxAge = -1
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		http.Error(w, "Failed to clear session", http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -105,4 +108,3 @@ func (s *Server) getCurrentUser(r *http.Request) (email, name string) {
 	}
 	return
 }
-

@@ -29,12 +29,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 			invitation = inv
 			// Mark as opened if not already
 			if !invitation.OpenedAt.Valid {
-				s.db.MarkAsOpened(invitation.ID)
+				if err := s.db.MarkAsOpened(invitation.ID); err != nil {
+					// Log but don't fail - this is just tracking
+					fmt.Printf("Warning: failed to mark invitation as opened: %v\n", err)
+				}
 			}
 		}
 	}
 
-	// Check if RSVP deadline has passed
+	// Check if the RSVP deadline has passed
 	now := time.Now()
 	deadlinePassed := now.After(s.config.RSVPDeadline)
 
@@ -43,14 +46,16 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("DEBUG: RSVP Deadline: %v\n", s.config.RSVPDeadline)
 	fmt.Printf("DEBUG: Deadline passed: %v\n", deadlinePassed)
 
-	templates.Home(string(lang), themes.Light, themes.Dark, invitation, deadlinePassed).Render(r.Context(), w)
+	if err := templates.Home(string(lang), themes.Light, themes.Dark, invitation, deadlinePassed).Render(r.Context(), w); err != nil {
+		http.Error(w, "Failed to render page", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {
 	// Extract token from URL path
 	token := r.URL.Path[len("/rsvp/"):]
 	if token == "" {
-		// Redirect to home page without token
+		// Redirect to home page without the token
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -67,7 +72,7 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 
 	lang := i18n.GetLanguageFromRequest(r)
 
-	// Check if RSVP deadline has passed
+	// Check if the RSVP deadline has passed
 	if time.Now().After(s.config.RSVPDeadline) {
 		errorMsg := "RSVP deadline has passed"
 		if lang == "ro" {
@@ -160,7 +165,7 @@ func (s *Server) handleAdminDashboard(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement admin dashboard
 	email, name := s.getCurrentUser(r)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(w, `
+	_, _ = fmt.Fprintf(w, `
 		<!DOCTYPE html>
 		<html>
 		<head>
@@ -188,13 +193,17 @@ func (s *Server) handleAdminInvitations(w http.ResponseWriter, r *http.Request) 
 	}
 
 	themes := config.GetThemes()
-	templates.AdminInvitationsList(userName, invitations, themes.Light, themes.Dark).Render(r.Context(), w)
+	if err := templates.AdminInvitationsList(userName, invitations, themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		http.Error(w, "Failed to render page", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) handleAdminNewInvitation(w http.ResponseWriter, r *http.Request) {
 	_, userName := s.getCurrentUser(r)
 	themes := config.GetThemes()
-	templates.AdminNewInvitation(userName, "", themes.Light, themes.Dark).Render(r.Context(), w)
+	if err := templates.AdminNewInvitation(userName, "", themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		http.Error(w, "Failed to render page", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +217,7 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 
 	// Parse form
 	if err := r.ParseForm(); err != nil {
-		templates.AdminNewInvitation(userName, "Eroare la procesarea formularului", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Eroare la procesarea formularului", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -217,14 +226,14 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 
 	// Validate
 	if guestName == "" || phone == "" {
-		templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
 	// Normalize phone number to E.164 format
 	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
 	if err != nil {
-		templates.AdminNewInvitation(userName, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 	phone = normalizedPhone
@@ -237,10 +246,10 @@ func (s *Server) handleAdminCreateInvitation(w http.ResponseWriter, r *http.Requ
 	inv, err := s.db.CreateInvitation(guestName, phone, inviteMessageTemplate)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			templates.AdminNewInvitation(userName, "Acest număr de telefon există deja", themes.Light, themes.Dark).Render(r.Context(), w)
+			_ = templates.AdminNewInvitation(userName, "Acest număr de telefon există deja", themes.Light, themes.Dark).Render(r.Context(), w)
 			return
 		}
-		templates.AdminNewInvitation(userName, "Eroare la crearea invitației", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Eroare la crearea invitației", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -298,7 +307,9 @@ func (s *Server) handleAdminEditInvitation(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	templates.AdminEditInvitation(userName, invitation, "", themes.Light, themes.Dark).Render(r.Context(), w)
+	if err := templates.AdminEditInvitation(userName, invitation, "", themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		http.Error(w, "Failed to render page", http.StatusInternalServerError)
+	}
 }
 
 func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Request) {
@@ -325,7 +336,7 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 
 	if guestName == "" || phone == "" {
 		invitation, _ := s.db.GetInvitationByID(id)
-		templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 
@@ -333,14 +344,14 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
 	if err != nil {
 		invitation, _ := s.db.GetInvitationByID(id)
-		templates.AdminEditInvitation(userName, invitation, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminEditInvitation(userName, invitation, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 	phone = normalizedPhone
 
 	if err := s.db.UpdateInvitation(id, guestName, phone); err != nil {
 		invitation, _ := s.db.GetInvitationByID(id)
-		templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.", themes.Light, themes.Dark).Render(r.Context(), w)
 		return
 	}
 

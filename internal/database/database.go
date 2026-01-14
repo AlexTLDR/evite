@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/pressly/goose/v3"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/pressly/goose/v3"
 )
 
 type DB struct {
@@ -19,6 +19,10 @@ func New(dbPath string) (*DB, error) {
 	}
 
 	if err := db.Ping(); err != nil {
+		err := db.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -36,4 +40,3 @@ func (db *DB) Migrate() error {
 
 	return nil
 }
-

@@ -11,8 +11,8 @@ import (
 )
 
 func main() {
-	// Load .env file (ignore error if file doesn't exist)
-	// Use Overload to force overwrite any existing environment variables
+	// Load .env file (ignore error if a file doesn't exist)
+	// Use Overload to force to overwrite any existing environment variables
 	err := godotenv.Overload()
 	if err != nil {
 		log.Printf("Warning: Error loading .env file: %v", err)

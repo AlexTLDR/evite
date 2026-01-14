@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -18,7 +19,7 @@ func GenerateToken() (string, error) {
 
 // CreateInvitation creates a new invitation with a unique token
 func (db *DB) CreateInvitation(guestName, phone, inviteMessage string) (*Invitation, error) {
-	// Generate unique token with retry logic
+	// Generate a unique token with retry logic
 	var token string
 	var err error
 	maxRetries := 5
@@ -29,7 +30,7 @@ func (db *DB) CreateInvitation(guestName, phone, inviteMessage string) (*Invitat
 			return nil, err
 		}
 
-		// Check if token already exists
+		// Check if a token already exists
 		var exists bool
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM invitations WHERE token = ?)", token).Scan(&exists)
 		if err != nil {
@@ -105,7 +106,12 @@ func (db *DB) GetAllInvitations() ([]*Invitation, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get invitations: %w", err)
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			fmt.Printf("Failed to close rows: %v", err)
+		}
+	}(rows)
 
 	var invitations []*Invitation
 	for rows.Next() {
@@ -163,7 +169,7 @@ func (db *DB) DeleteInvitation(id int64) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Delete all responses first
 	_, err = tx.Exec(`DELETE FROM responses WHERE invitation_id = ?`, id)
