@@ -1,23 +1,21 @@
 # Build stage
 FROM golang:alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache git gcc musl-dev sqlite-dev curl
+# Install build dependencies including Node.js for Tailwind
+RUN apk add --no-cache git gcc musl-dev sqlite-dev nodejs npm
 
 # Set working directory
 WORKDIR /app
-
-# Download Tailwind CSS standalone CLI
-RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 && \
-    chmod +x tailwindcss-linux-x64 && \
-    mv tailwindcss-linux-x64 tailwindcss
 
 # Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy source code (including package.json for tailwind)
 COPY . .
+
+# Install Node dependencies (daisyui) and tailwindcss CLI
+RUN npm install && npm install -D @tailwindcss/cli@latest
 
 # Install templ CLI
 RUN go install github.com/a-h/templ/cmd/templ@latest
@@ -26,7 +24,7 @@ RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN templ generate
 
 # Build Tailwind CSS with DaisyUI
-RUN ./tailwindcss -i static/css/input.css -o static/css/tailwind.css --minify
+RUN npx @tailwindcss/cli -i static/css/input.css -o static/css/tailwind.css --minify
 
 # Build the application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
