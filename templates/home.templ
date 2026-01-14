@@ -163,7 +163,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 							<div class="w-full">
 								<div class="text-center px-4">
 									<!-- Greeting -->
-								<p class="text-xl mb-4 font-semibold text-primary">
+								<p class="text-xl xl:text-3xl mb-4 font-semibold text-primary">
 									if lang == "ro" {
 										Hei! Eu sunt
 									} else {
@@ -172,12 +172,12 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 								</p>
 
 								<!-- Child's Name -->
-								<h2 class="text-5xl mb-6 mt-2 font-bold text-primary" style="font-family: 'Brush Script MT', cursive;">
+								<h2 class="text-5xl xl:text-7xl mb-6 mt-2 font-bold text-primary" style="font-family: 'Brush Script MT', cursive;">
 									Anya Maria
 								</h2>
 
 								<!-- Fun Message -->
-								<p class="text-lg mb-6 leading-relaxed text-primary font-medium">
+								<p class="text-lg xl:text-2xl mb-6 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
 										și abia aștept să mă cunoști!<br/>
 										Vino la botezul meu pe
@@ -189,15 +189,15 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 								<!-- Date -->
 								<div class="flex items-center justify-center gap-6 my-6">
-									<span class="text-base text-primary font-medium">
+									<span class="text-base xl:text-xl text-primary font-medium">
 										if lang == "ro" {
 											duminică
 										} else {
 											Sunday
 										}
 									</span>
-									<span class="text-4xl font-bold text-primary">19</span>
-									<span class="text-base text-primary font-medium">
+									<span class="text-4xl xl:text-6xl font-bold text-primary">19</span>
+									<span class="text-base xl:text-xl text-primary font-medium">
 										if lang == "ro" {
 											aprilie 2026
 										} else {
@@ -215,16 +215,16 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 								<!-- Church Details -->
 								<div class="mb-6">
-									<p class="text-sm mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
+									<p class="text-sm xl:text-lg mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
 										if lang == "ro" {
 											Ceremonia religioasă va avea loc la
 										} else {
 											The religious ceremony will take place at
 										}
 									</p>
-									<p class="font-semibold text-base mb-1 text-primary">Biserica Apărătorii Patriei I</p>
-									<p class="text-sm mt-1 text-primary">Strada Panselelor 31, București</p>
-									<p class="text-sm text-primary mt-1">
+									<p class="font-semibold text-base xl:text-xl mb-1 text-primary">Biserica Apărătorii Patriei I</p>
+									<p class="text-sm xl:text-lg mt-1 text-primary">Strada Panselelor 31, București</p>
+									<p class="text-sm xl:text-lg text-primary mt-1">
 										if lang == "ro" {
 											la ora 14:00
 										} else {
@@ -255,16 +255,16 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 								<!-- Restaurant Details -->
 								<div class="mb-6">
-									<p class="text-sm mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
+									<p class="text-sm xl:text-lg mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
 										if lang == "ro" {
 											Vom continua împreună la
 										} else {
 											We will continue together at
 										}
 									</p>
-									<p class="font-semibold text-base mb-1 text-primary">Noor By The Pool</p>
-									<p class="text-sm mt-1 text-primary">Splaiul Unirii 9D, Popești-Leordeni</p>
-									<p class="text-sm text-primary mt-1">
+									<p class="font-semibold text-base xl:text-xl mb-1 text-primary">Noor By The Pool</p>
+									<p class="text-sm xl:text-lg mt-1 text-primary">Splaiul Unirii 9D, Popești-Leordeni</p>
+									<p class="text-sm xl:text-lg text-primary mt-1">
 										if lang == "ro" {
 											la ora 19:00
 										} else {

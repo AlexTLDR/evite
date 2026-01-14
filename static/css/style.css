@@ -313,7 +313,14 @@ html, body {
     overflow: visible; /* Allow decorations to show outside */
     touch-action: pan-y pinch-zoom;
     width: 100%;
-    max-width: 100%;
+    max-width: 672px; /* max-w-2xl for desktop */
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .invitation-wrapper {
+        max-width: 100% !important;
+    }
 }
 
 /* Prevent decorations from causing page scroll */
@@ -326,7 +333,8 @@ html, body {
 .invitation-card-container {
     position: relative;
     width: 100%;
-    max-width: 100%;
+    max-width: 672px; /* max-w-2xl for desktop */
+    margin: 0 auto;
     z-index: 1;
     touch-action: pan-y pinch-zoom;
 }
