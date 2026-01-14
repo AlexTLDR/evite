@@ -104,9 +104,9 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 				x-init="preloadImages(); showRandomDecorations()"
 			>
 				<!-- Invitation Card Container -->
-				<div class="invitation-card-container">
+				<div class="invitation-card-container px-4">
 					<!-- Card Image with Text Overlay -->
-					<div class="relative w-96 max-w-md shadow-2xl">
+					<div class="relative w-full max-w-[340px] sm:max-w-md shadow-2xl mx-auto">
 						<!-- Language Toggle Button - Top Left -->
 						<div class="absolute top-2 left-2 z-[60]">
 							if lang == "ro" {
@@ -345,7 +345,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 				if !deadlinePassed {
 					<div
 						id="rsvp-form"
-						class="rsvp-form-container mt-8 w-96 max-w-md"
+						class="rsvp-form-container mt-8 w-full max-w-[340px] sm:max-w-md mx-auto px-4"
 						x-show="$store.rsvp.show"
 						x-cloak
 						x-transition:enter="transition ease-out duration-300"

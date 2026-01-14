@@ -31,7 +31,7 @@ templ Layout(title string, lang string, lightTheme string, darkTheme string) {
 	<html lang={ lang }>
 		<head>
 			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 			<title>{ title }</title>
 			@themeScript(lightTheme, darkTheme)
 			<link rel="stylesheet" href="/static/css/tailwind.css"/>

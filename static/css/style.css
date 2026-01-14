@@ -8,9 +8,12 @@
     display: none !important;
 }
 
-body {
+html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
 }
 
 /* Admin Layout */
@@ -287,6 +290,8 @@ body {
     position: relative;
     padding: 2rem 1rem;
     background-color: oklch(var(--b2));
+    overflow-x: hidden;
+    width: 100%;
 }
 
 .landing-page {
@@ -297,6 +302,9 @@ body {
     justify-content: center;
     position: relative;
     background-color: oklch(var(--b2));
+    overflow-x: hidden;
+    width: 100%;
+    touch-action: pan-y pinch-zoom;
 }
 
 /* Wrapper for card and decorations */
@@ -305,6 +313,7 @@ body {
     width: 100%;
     max-width: 400px;
     overflow: visible; /* Allow decorations to show outside */
+    touch-action: pan-y pinch-zoom;
 }
 
 /* Prevent decorations from causing page scroll */
@@ -318,6 +327,7 @@ body {
     position: relative;
     width: 100%;
     z-index: 1;
+    touch-action: pan-y pinch-zoom;
 }
 
 /* Decorative Elements - Random popup animations */
