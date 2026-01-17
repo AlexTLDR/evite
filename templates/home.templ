@@ -165,7 +165,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 									<!-- Greeting -->
 								<p class="text-lg xl:text-2xl mb-4 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
-										Ma numesc,
+										Mă numesc,
 									} else {
 										My name is,
 									}
@@ -179,40 +179,21 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 								<!-- Fun Message -->
 								<p class="text-lg xl:text-2xl mb-6 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
-										si am deosebita placere de a va invita in data de 19.04.2026<br/>
-										la doua evenimente importante ale familiei noastre:<br/>
-										<strong>Taina Sfintei Cununii</strong> a parintilor mei, <strong>Adelina & Daniel Mureseanu</strong><br/>
-										si <strong>Slujba Botezului meu</strong>,<br/>
-										sub indrumarea nasilor nostri,<br/>
+										și am deosebita plăcere de a vă invita în data de <strong class="text-2xl xl:text-4xl">19.04.2026</strong><br/>
+										la două evenimente importante ale familiei noastre:<br/>
+										<strong>Taina Sfintei Cununii</strong> a părinților mei, <strong>Adelina & Daniel Mureșeanu</strong><br/>
+										și <strong>Slujba Botezului</strong> meu,<br/>
+										sub îndrumarea nașilor noștri,<br/>
 										<strong>Bianca & Mircea Constantinescu</strong>.
 									} else {
-										and I have the great pleasure to invite you on 19.04.2026<br/>
+										and I have the great pleasure to invite you on <strong class="text-2xl xl:text-4xl">19.04.2026</strong><br/>
 										to two important events of our family:<br/>
-										<strong>The Holy Matrimony</strong> of my parents, <strong>Adelina & Daniel Mureseanu</strong><br/>
+										<strong>The Holy Matrimony</strong> of my parents, <strong>Adelina & Daniel Mureșeanu</strong><br/>
 										and <strong>My Baptism</strong>,<br/>
 										under the guidance of our godparents,<br/>
 										<strong>Bianca & Mircea Constantinescu</strong>.
 									}
 								</p>
-
-								<!-- Date -->
-								<div class="flex items-center justify-center gap-6 my-6">
-									<span class="text-base xl:text-xl text-primary font-medium">
-										if lang == "ro" {
-											duminică
-										} else {
-											Sunday
-										}
-									</span>
-									<span class="text-4xl xl:text-6xl font-bold text-primary">19</span>
-									<span class="text-base xl:text-xl text-primary font-medium">
-										if lang == "ro" {
-											aprilie 2026
-										} else {
-											April 2026
-										}
-									</span>
-								</div>
 
 								<div class="divider opacity-30"></div>
 
@@ -368,7 +349,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						<!-- Title -->
 						<h3 class="text-center text-lg font-semibold mb-6">
 							if lang == "ro" {
-								Doriti sa participati?
+								Doriți să participați?
 							} else {
 								Will you attend?
 							}
@@ -382,7 +363,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 								class="btn btn-lg btn-success text-white font-semibold rounded-full w-full"
 							>
 								if lang == "ro" {
-									Da, confirm prezenta!
+									Da, confirm prezența!
 								} else {
 									Yes, I'll be there!
 								}
@@ -394,7 +375,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 								class="btn btn-lg btn-error text-white font-semibold rounded-full w-full"
 							>
 								if lang == "ro" {
-									Nu, nu pot sa particip!
+									Nu, nu pot să particip!
 								} else {
 									No, I can't make it!
 								}
