@@ -354,11 +354,11 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						action="/rsvp/submit"
 						class="bg-base-300 text-primary rounded-lg shadow-xl p-6"
 						if invitation != nil {
-							x-data={ fmt.Sprintf("{attending: '', hasPartner: false, kidsCount: 0, guestName: '%s', phone: '%s'}",
+							x-data={ fmt.Sprintf("{attending: '', hasPartner: false, kidsCount: 0, menuPreference: '', companionMenuPreference: '', guestName: '%s', phone: '%s'}",
 								strings.ReplaceAll(invitation.GuestName, "'", "\\'"),
 								strings.ReplaceAll(invitation.Phone, "'", "\\'")) }
 						} else {
-							x-data="{attending: '', hasPartner: false, kidsCount: 0, guestName: '', phone: ''}"
+							x-data="{attending: '', hasPartner: false, kidsCount: 0, menuPreference: '', companionMenuPreference: '', guestName: '', phone: ''}"
 						}
 					>
 						if invitation != nil {
@@ -550,6 +550,76 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 										class="input input-bordered w-full"
 										x-model.number="kidsCount"
 									/>
+								</div>
+
+								<!-- Menu Preference -->
+								<div class="form-control">
+									<label class="label">
+										<span class="label-text">
+											if lang == "ro" {
+												Ce meniu doriți?
+											} else {
+												What menu would you like?
+											}
+										</span>
+									</label>
+									<div class="flex gap-3">
+										<label class="flex items-center gap-2 flex-1 cursor-pointer">
+											<input
+												type="radio"
+												name="menu_preference"
+												value="standard"
+												class="radio radio-primary"
+												x-model="menuPreference"
+											/>
+											<span class="label-text">Standard</span>
+										</label>
+										<label class="flex items-center gap-2 flex-1 cursor-pointer">
+											<input
+												type="radio"
+												name="menu_preference"
+												value="vegan"
+												class="radio radio-primary"
+												x-model="menuPreference"
+											/>
+											<span class="label-text">Vegan</span>
+										</label>
+									</div>
+								</div>
+
+								<!-- Companion Menu Preference (only if has partner) -->
+								<div x-show="hasPartner" x-cloak class="form-control">
+									<label class="label">
+										<span class="label-text">
+											if lang == "ro" {
+												Ce meniu dorește însoțitorul?
+											} else {
+												What menu does your companion want?
+											}
+										</span>
+									</label>
+									<div class="flex gap-3">
+										<label class="flex items-center gap-2 flex-1 cursor-pointer">
+											<input
+												type="radio"
+												name="companion_menu_preference"
+												value="standard"
+												class="radio radio-primary"
+												x-model="companionMenuPreference"
+											/>
+											<span class="label-text">Standard</span>
+										</label>
+										<label class="flex items-center gap-2 flex-1 cursor-pointer">
+											<input
+												type="radio"
+												name="companion_menu_preference"
+												value="vegan"
+												class="radio radio-primary"
+												x-model="companionMenuPreference"
+											/>
+											<span class="label-text">Vegan</span>
+										</label>
+									</div>
 								</div>
 
 								<!-- Message -->

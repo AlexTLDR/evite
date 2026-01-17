@@ -95,6 +95,8 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 	phone := strings.TrimSpace(r.FormValue("phone"))
 	hasPartner := r.FormValue("has_partner") == "true"
 	kidsCountStr := r.FormValue("kids_count")
+	menuPreference := strings.TrimSpace(r.FormValue("menu_preference"))
+	companionMenuPreference := strings.TrimSpace(r.FormValue("companion_menu_preference"))
 	comment := strings.TrimSpace(r.FormValue("comment"))
 
 	// Validate required fields
@@ -146,7 +148,7 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 		plusOneName = "Partner" // We don't collect partner name in this form
 	}
 
-	_, respErr := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, comment)
+	_, respErr := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, menuPreference, companionMenuPreference, comment)
 	if respErr != nil {
 		http.Error(w, "Failed to save response", http.StatusInternalServerError)
 		return
