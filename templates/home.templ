@@ -218,25 +218,19 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 								<!-- Church Icon -->
 								<div class="flex justify-center my-5">
-									<img src="/static/images/church.svg" alt="Church" class="h-20 w-20"/>
+									<img x-show="!isDark" src="/static/images/church.svg" alt="Church" class="h-20 w-20"/>
+									<img x-show="isDark" x-cloak src="/static/images/church-dark.png" alt="Church" class="h-20 w-20"/>
 								</div>
 
 								<!-- Church Details -->
 								<div class="mb-6">
-									<p class="text-sm xl:text-lg mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
-										if lang == "ro" {
-											Ceremonia religioasă va avea loc la
-										} else {
-											The religious ceremony will take place at
-										}
-									</p>
 									<p class="font-semibold text-base xl:text-xl mb-1 text-primary">Biserica Apărătorii Patriei I</p>
 									<p class="text-sm xl:text-lg mt-1 text-primary">Strada Panselelor 31, București</p>
-									<p class="text-sm xl:text-lg text-primary mt-1">
+									<p class="text-sm xl:text-lg text-primary mt-1 font-bold">
 										if lang == "ro" {
-											la ora 14:00
+											ora 12:00
 										} else {
-											at 2:00 PM
+											at 12:00 PM
 										}
 									</p>
 									<div class="mt-3 text-center">
@@ -258,25 +252,19 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 
 								<!-- Restaurant Icon -->
 								<div class="flex justify-center my-5">
-									<img src="/static/images/party.svg" alt="Restaurant" class="h-20 w-20"/>
+									<img x-show="!isDark" src="/static/images/party.svg" alt="Restaurant" class="h-20 w-20"/>
+									<img x-show="isDark" x-cloak src="/static/images/party-dark.png" alt="Restaurant" class="h-20 w-20"/>
 								</div>
 
 								<!-- Restaurant Details -->
 								<div class="mb-6">
-									<p class="text-sm xl:text-lg mb-2 text-primary font-medium" style="letter-spacing: 0.05em;">
-										if lang == "ro" {
-											Vom continua împreună la
-										} else {
-											We will continue together at
-										}
-									</p>
 									<p class="font-semibold text-base xl:text-xl mb-1 text-primary">Noor By The Pool</p>
 									<p class="text-sm xl:text-lg mt-1 text-primary">Splaiul Unirii 9D, Popești-Leordeni</p>
-									<p class="text-sm xl:text-lg text-primary mt-1">
+									<p class="text-sm xl:text-lg text-primary mt-1 font-bold">
 										if lang == "ro" {
-											la ora 19:00
+											ora 16:00
 										} else {
-											at 7:00 PM
+											at 4:00 PM
 										}
 									</p>
 									<div class="mt-3 text-center">
