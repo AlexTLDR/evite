@@ -159,31 +159,39 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						/>
 
 						<!-- Text Overlay - Positioned Between Decorations -->
-						<div class="absolute inset-x-0 top-[15%] bottom-[5%] flex items-start justify-center px-8 overflow-y-auto scrollbar-thin">
-							<div class="w-full">
-								<div class="text-center px-4">
+						<div class="absolute inset-x-0 top-[15%] bottom-[5%] flex items-start justify-center px-4 sm:px-6 md:px-8 overflow-y-auto scrollbar-thin">
+							<div class="w-full max-w-md mx-auto">
+								<div class="text-center px-6 sm:px-8">
 									<!-- Greeting -->
-								<p class="text-xl xl:text-3xl mb-4 font-semibold text-primary">
+								<p class="text-lg xl:text-2xl mb-4 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
-										Hei! Eu sunt
+										Ma numesc,
 									} else {
-										Hey! I'm
+										My name is,
 									}
 								</p>
 
 								<!-- Child's Name -->
 								<h2 class="text-5xl xl:text-7xl mb-6 mt-2 font-bold text-primary" style="font-family: 'Brush Script MT', cursive;">
-									Anya Maria
+									ANYA MARIA
 								</h2>
 
 								<!-- Fun Message -->
 								<p class="text-lg xl:text-2xl mb-6 leading-relaxed text-primary font-medium">
 									if lang == "ro" {
-										și abia aștept să mă cunoști!<br/>
-										Vino la botezul meu pe
+										si am deosebita placere de a va invita in data de 19.04.2026<br/>
+										la doua evenimente importante ale familiei noastre:<br/>
+										<strong>Taina Sfintei Cununii</strong> a parintilor mei, <strong>Adelina & Daniel Mureseanu</strong><br/>
+										si <strong>Slujba Botezului meu</strong>,<br/>
+										sub indrumarea nasilor nostri,<br/>
+										<strong>Bianca & Mircea Constantinescu</strong>.
 									} else {
-										and I can't wait to meet you!<br/>
-										Come to my baptism on
+										and I have the great pleasure to invite you on 19.04.2026<br/>
+										to two important events of our family:<br/>
+										<strong>The Holy Matrimony</strong> of my parents, <strong>Adelina & Daniel Mureseanu</strong><br/>
+										and <strong>My Baptism</strong>,<br/>
+										under the guidance of our godparents,<br/>
+										<strong>Bianca & Mircea Constantinescu</strong>.
 									}
 								</p>
 
