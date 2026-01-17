@@ -7,6 +7,20 @@
 /* Scan templates for Tailwind classes */
 @source "../../templates";
 
+/* Fix for Samsung Browser - OKLCH color fallback using @supports */
+@layer base {
+  /* Fallback for browsers that don't support OKLCH */
+  @supports not (color: oklch(0% 0 0)) {
+    [data-theme="autumn"] {
+      --color-primary: #8B4513 !important;
+    }
+
+    [data-theme="night"] {
+      --color-primary: #60A5FA !important;
+    }
+  }
+}
+
 /* Make input borders blend with background */
 @layer utilities {
   .input-bordered,
