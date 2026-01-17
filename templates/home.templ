@@ -378,7 +378,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						<div class="flex flex-col gap-4 mb-6">
 							<button
 								type="button"
-								@click="attending = 'yes'; setTimeout(() => document.getElementById('rsvp-details').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
+								@click="attending = 'yes'; menuPreference = menuPreference || 'standard'; setTimeout(() => document.getElementById('rsvp-details').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)"
 								class="btn btn-lg btn-success text-white font-semibold rounded-full w-full"
 							>
 								if lang == "ro" {
@@ -478,7 +478,7 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 										</button>
 										<button
 											type="button"
-											@click="hasPartner = true"
+											@click="hasPartner = true; companionMenuPreference = companionMenuPreference || 'standard'"
 											:class="hasPartner ? 'btn-info' : 'btn-outline btn-info'"
 											class="btn flex-1"
 										>
@@ -542,14 +542,58 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 											}
 										</span>
 									</label>
-									<input
-										type="number"
-										name="kids_count"
-										min="0"
-										max="10"
-										class="input input-bordered w-full"
-										x-model.number="kidsCount"
-									/>
+									<div class="flex gap-3 justify-center">
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												name="kids_count"
+												value="1"
+												class="radio radio-primary"
+												x-model.number="kidsCount"
+											/>
+											<span class="label-text">1</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												name="kids_count"
+												value="2"
+												class="radio radio-primary"
+												x-model.number="kidsCount"
+											/>
+											<span class="label-text">2</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												name="kids_count"
+												value="3"
+												class="radio radio-primary"
+												x-model.number="kidsCount"
+											/>
+											<span class="label-text">3</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												name="kids_count"
+												value="4"
+												class="radio radio-primary"
+												x-model.number="kidsCount"
+											/>
+											<span class="label-text">4</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												name="kids_count"
+												value="5"
+												class="radio radio-primary"
+												x-model.number="kidsCount"
+											/>
+											<span class="label-text">5</span>
+										</label>
+									</div>
 								</div>
 
 								<!-- Menu Preference -->
