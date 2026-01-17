@@ -73,13 +73,25 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 							<td class="hidden lg:table-cell">
 								if inv.Response != nil {
 									if inv.Response.Attending {
-										<div class="flex flex-wrap gap-1 items-center">
-											<span class="text-success font-semibold">✓ Participă</span>
-											if inv.Response.PlusOne {
-												<span class="badge badge-sm">+1</span>
+										<div class="flex flex-col gap-1">
+											<div class="flex flex-wrap gap-1 items-center">
+												<span class="text-success font-semibold">✓ Participă</span>
+												if inv.Response.PlusOne {
+													<span class="badge badge-sm">+1</span>
+												}
+												if inv.Response.KidsCount > 0 {
+													<span class="badge badge-sm">{ fmt.Sprintf("%d copii", inv.Response.KidsCount) }</span>
+												}
+											</div>
+											if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
+												<div class="text-xs opacity-70">
+													Meniu: <span class="font-semibold">{ inv.Response.MenuPreference.String }</span>
+												</div>
 											}
-											if inv.Response.KidsCount > 0 {
-												<span class="badge badge-sm">{ fmt.Sprintf("%d copii", inv.Response.KidsCount) }</span>
+											if inv.Response.PlusOne && inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
+												<div class="text-xs opacity-70">
+													Însoțitor: <span class="font-semibold">{ inv.Response.CompanionMenuPreference.String }</span>
+												</div>
 											}
 										</div>
 									} else {
@@ -116,6 +128,16 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 													<span>({ fmt.Sprintf("%d copii", inv.Response.KidsCount) })</span>
 												}
 											</div>
+											if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
+												<div class="text-xs opacity-70 mt-0.5">
+													M: { inv.Response.MenuPreference.String }
+												</div>
+											}
+											if inv.Response.PlusOne && inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
+												<div class="text-xs opacity-70 mt-0.5">
+													Î: { inv.Response.CompanionMenuPreference.String }
+												</div>
+											}
 										} else {
 											<div class="text-error text-xs mt-1">✗ Nu participă</div>
 										}

@@ -375,7 +375,7 @@ func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte{0xEF, 0xBB, 0xBF})
 
 	// Write CSV header
-	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,+1,Copii,Mesaj\n"))
+	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,+1,Copii,Meniu,Meniu Însoțitor,Mesaj\n"))
 
 	// Write data rows
 	for _, inv := range invitations {
@@ -401,6 +401,8 @@ func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) 
 		attending := "-"
 		plusOne := "-"
 		kidsCount := "-"
+		menuPreference := "-"
+		companionMenuPreference := "-"
 		comment := "-"
 
 		if inv.Response != nil {
@@ -422,14 +424,22 @@ func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) 
 				kidsCount = "0"
 			}
 
+			if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
+				menuPreference = inv.Response.MenuPreference.String
+			}
+
+			if inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
+				companionMenuPreference = inv.Response.CompanionMenuPreference.String
+			}
+
 			if inv.Response.Comment.Valid {
 				comment = strings.ReplaceAll(inv.Response.Comment.String, "\"", "\"\"")
 				comment = strings.ReplaceAll(comment, "\n", " ")
 			}
 		}
 
-		line := fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			name, phone, sent, opened, responded, attending, plusOne, kidsCount, comment)
+		line := fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			name, phone, sent, opened, responded, attending, plusOne, kidsCount, menuPreference, companionMenuPreference, comment)
 		w.Write([]byte(line))
 	}
 }
