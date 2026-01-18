@@ -24,6 +24,7 @@ type homePageData struct {
 	darkTheme      string
 	invitation     *database.Invitation
 	deadlinePassed bool
+	deadlineText   string
 }
 
 // loadInvitationByToken loads an invitation by token and marks it as opened
@@ -61,6 +62,21 @@ func checkDeadlinePassed(cfg *config.Config) bool {
 	return deadlinePassed
 }
 
+// formatDeadline formats the deadline for display based on language
+func formatDeadline(deadline time.Time, lang i18n.Language) string {
+	// Format: "12 Aprilie 2026, 23:59" for Romanian or "April 12, 2026, 23:59" for English
+	if lang == "ro" {
+		// Romanian month names
+		months := []string{"", "Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie",
+			"Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"}
+		return fmt.Sprintf("%d %s %d, %02d:%02d",
+			deadline.Day(), months[deadline.Month()], deadline.Year(),
+			deadline.Hour(), deadline.Minute())
+	}
+	// English format
+	return deadline.Format("January 2, 2006, 15:04")
+}
+
 // prepareHomePageData gathers all data needed for the home page
 func prepareHomePageData(s Server, r *http.Request) homePageData {
 	lang := i18n.GetLanguageFromRequest(r)
@@ -73,6 +89,7 @@ func prepareHomePageData(s Server, r *http.Request) homePageData {
 		darkTheme:      themes.Dark,
 		invitation:     loadInvitationByToken(s.GetDB(), token),
 		deadlinePassed: checkDeadlinePassed(s.GetConfig()),
+		deadlineText:   formatDeadline(s.GetConfig().RSVPDeadline, lang),
 	}
 }
 
@@ -81,7 +98,7 @@ func HandleHome(s Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := prepareHomePageData(s, r)
 
-		if err := templates.Home(data.lang, data.lightTheme, data.darkTheme, data.invitation, data.deadlinePassed).Render(r.Context(), w); err != nil {
+		if err := templates.Home(data.lang, data.lightTheme, data.darkTheme, data.invitation, data.deadlinePassed, data.deadlineText).Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
 		}
 	}
