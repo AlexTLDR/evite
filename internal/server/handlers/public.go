@@ -27,7 +27,7 @@ type homePageData struct {
 	deadlineText   string
 }
 
-// loadInvitationByToken loads an invitation by token and marks it as opened
+// loadInvitationByToken loads an invitation by token and marks it as opened and sent
 func loadInvitationByToken(db *database.DB, token string) *database.Invitation {
 	if token == "" {
 		return nil
@@ -36,6 +36,14 @@ func loadInvitationByToken(db *database.DB, token string) *database.Invitation {
 	invitation, err := db.GetInvitationByToken(token)
 	if err != nil {
 		return nil
+	}
+
+	// Mark as sent if not already (if they opened it, it was sent)
+	if !invitation.SentAt.Valid {
+		if err := db.MarkAsSent(invitation.ID); err != nil {
+			// Log but don't fail - this is just tracking
+			fmt.Printf("Warning: failed to mark invitation as sent: %v\n", err)
+		}
 	}
 
 	// Mark as opened if not already

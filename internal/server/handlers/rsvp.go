@@ -99,7 +99,7 @@ func parseRSVPForm(r *http.Request, w http.ResponseWriter, lang i18n.Language) (
 	}, true
 }
 
-// getOrCreateInvitation retrieves an existing invitation by token or creates a new one
+// getOrCreateInvitation retrieves an existing invitation by token or phone, or creates a new one
 func getOrCreateInvitation(s Server, formData *rsvpFormData, w http.ResponseWriter) (int64, bool) {
 	if formData.token != "" {
 		invitation, err := s.GetDB().GetInvitationByToken(formData.token)
@@ -110,12 +110,26 @@ func getOrCreateInvitation(s Server, formData *rsvpFormData, w http.ResponseWrit
 		return invitation.ID, true
 	}
 
-	// If no token, create a new invitation
-	invitation, err := s.GetDB().CreateInvitation(formData.guestName, formData.phone, "")
+	// If no token, check if an invitation exists for this phone number
+	invitation, err := s.GetDB().GetInvitationByPhone(formData.phone)
+	if err == nil {
+		// Invitation exists for this phone number, use it
+		return invitation.ID, true
+	}
+
+	// If no existing invitation, create a new one
+	invitation, err = s.GetDB().CreateInvitation(formData.guestName, formData.phone, "")
 	if err != nil {
 		http.Error(w, "Failed to create invitation", http.StatusInternalServerError)
 		return 0, false
 	}
+
+	// Mark the new invitation as sent immediately since it was created via direct RSVP
+	if err := s.GetDB().MarkAsSent(invitation.ID); err != nil {
+		// Log but don't fail - the invitation is created
+		fmt.Printf("Warning: failed to mark invitation as sent: %v\n", err)
+	}
+
 	return invitation.ID, true
 }
 

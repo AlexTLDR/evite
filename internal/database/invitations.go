@@ -93,6 +93,23 @@ func (db *DB) GetInvitationByToken(token string) (*Invitation, error) {
 	return inv, nil
 }
 
+// GetInvitationByPhone retrieves an invitation by phone number
+func (db *DB) GetInvitationByPhone(phone string) (*Invitation, error) {
+	inv := &Invitation{}
+	err := db.QueryRow(
+		`SELECT id, guest_name, phone, token, invite_message, sent_at, opened_at, responded_at, created_at
+		 FROM invitations WHERE phone = $1`,
+		phone,
+	).Scan(&inv.ID, &inv.GuestName, &inv.Phone, &inv.Token, &inv.InviteMessage,
+		&inv.SentAt, &inv.OpenedAt, &inv.RespondedAt, &inv.CreatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get invitation: %w", err)
+	}
+
+	return inv, nil
+}
+
 // GetAllInvitations retrieves all invitations
 func (db *DB) GetAllInvitations() ([]*Invitation, error) {
 	rows, err := db.Query(
