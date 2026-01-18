@@ -10,7 +10,7 @@ data:
     certificatesResolvers:
       letsencrypt:
         acme:
-          email: alex@dotsat.work  # Change to your email
+          email: alex@alextldr.com
           storage: /data/acme.json
           httpChallenge:
             entryPoint: web

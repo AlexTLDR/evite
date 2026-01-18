@@ -27,7 +27,7 @@ spec:
       ipFamilyPolicy: "PreferDualStack"
     # Let's Encrypt configuration
     additionalArguments:
-      - "--certificatesresolvers.letsencrypt.acme.email=alex@dotsat.work"
+      - "--certificatesresolvers.letsencrypt.acme.email=alex@alextldr.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     persistence:
