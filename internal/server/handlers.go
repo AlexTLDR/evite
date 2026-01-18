@@ -64,6 +64,110 @@ func (s *Server) handleRSVP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/?token="+token, http.StatusSeeOther)
 }
 
+// rsvpFormData holds the parsed and validated form data
+type rsvpFormData struct {
+	token                   string
+	attending               bool
+	guestName               string
+	phone                   string
+	hasPartner              bool
+	kidsCount               int
+	menuPreference          string
+	companionMenuPreference string
+	comment                 string
+}
+
+// checkRSVPDeadline validates if the RSVP deadline has passed
+func (s *Server) checkRSVPDeadline(w http.ResponseWriter, lang i18n.Language) bool {
+	if time.Now().After(s.config.RSVPDeadline) {
+		errorMsg := "RSVP deadline has passed"
+		if lang == "ro" {
+			errorMsg = "Termenul limită pentru confirmare a trecut"
+		}
+		http.Error(w, errorMsg, http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
+// normalizeAndValidatePhone normalizes a phone number to E.164 format
+func (s *Server) normalizeAndValidatePhone(phone string, w http.ResponseWriter, lang i18n.Language) (string, bool) {
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		errorMsg := "Invalid phone number format"
+		if lang == "ro" {
+			errorMsg = "Număr de telefon invalid"
+		}
+		http.Error(w, errorMsg, http.StatusBadRequest)
+		return "", false
+	}
+	return normalizedPhone, true
+}
+
+// parseRSVPForm parses and validates the RSVP form data
+func (s *Server) parseRSVPForm(r *http.Request, w http.ResponseWriter, lang i18n.Language) (*rsvpFormData, bool) {
+	// Parse form
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Invalid form data", http.StatusBadRequest)
+		return nil, false
+	}
+
+	// Get form values
+	guestName := strings.TrimSpace(r.FormValue("guest_name"))
+	phone := strings.TrimSpace(r.FormValue("phone"))
+
+	// Validate required fields
+	if guestName == "" || phone == "" {
+		http.Error(w, "Name and phone are required", http.StatusBadRequest)
+		return nil, false
+	}
+
+	// Normalize phone number
+	normalizedPhone, ok := s.normalizeAndValidatePhone(phone, w, lang)
+	if !ok {
+		return nil, false
+	}
+
+	// Parse kids count
+	kidsCount := 0
+	kidsCountStr := r.FormValue("kids_count")
+	if kidsCountStr != "" {
+		fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
+	}
+
+	return &rsvpFormData{
+		token:                   r.FormValue("token"),
+		attending:               r.FormValue("attending") == "yes",
+		guestName:               guestName,
+		phone:                   normalizedPhone,
+		hasPartner:              r.FormValue("has_partner") == "true",
+		kidsCount:               kidsCount,
+		menuPreference:          strings.TrimSpace(r.FormValue("menu_preference")),
+		companionMenuPreference: strings.TrimSpace(r.FormValue("companion_menu_preference")),
+		comment:                 strings.TrimSpace(r.FormValue("comment")),
+	}, true
+}
+
+// getOrCreateInvitation retrieves an existing invitation by token or creates a new one
+func (s *Server) getOrCreateInvitation(formData *rsvpFormData, w http.ResponseWriter) (int64, bool) {
+	if formData.token != "" {
+		invitation, err := s.db.GetInvitationByToken(formData.token)
+		if err != nil {
+			http.Error(w, "Invalid invitation token", http.StatusBadRequest)
+			return 0, false
+		}
+		return invitation.ID, true
+	}
+
+	// If no token, create a new invitation
+	invitation, err := s.db.CreateInvitation(formData.guestName, formData.phone, "")
+	if err != nil {
+		http.Error(w, "Failed to create invitation", http.StatusInternalServerError)
+		return 0, false
+	}
+	return invitation.ID, true
+}
+
 func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -73,91 +177,48 @@ func (s *Server) handleRSVPSubmit(w http.ResponseWriter, r *http.Request) {
 	lang := i18n.GetLanguageFromRequest(r)
 
 	// Check if the RSVP deadline has passed
-	if time.Now().After(s.config.RSVPDeadline) {
-		errorMsg := "RSVP deadline has passed"
-		if lang == "ro" {
-			errorMsg = "Termenul limită pentru confirmare a trecut"
-		}
-		http.Error(w, errorMsg, http.StatusForbidden)
+	if !s.checkRSVPDeadline(w, lang) {
 		return
 	}
 
-	// Parse form
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Invalid form data", http.StatusBadRequest)
+	// Parse and validate form data
+	formData, ok := s.parseRSVPForm(r, w, lang)
+	if !ok {
 		return
 	}
 
-	// Get form values
-	token := r.FormValue("token")
-	attending := r.FormValue("attending") == "yes"
-	guestName := strings.TrimSpace(r.FormValue("guest_name"))
-	phone := strings.TrimSpace(r.FormValue("phone"))
-	hasPartner := r.FormValue("has_partner") == "true"
-	kidsCountStr := r.FormValue("kids_count")
-	menuPreference := strings.TrimSpace(r.FormValue("menu_preference"))
-	companionMenuPreference := strings.TrimSpace(r.FormValue("companion_menu_preference"))
-	comment := strings.TrimSpace(r.FormValue("comment"))
-
-	// Validate required fields
-	if guestName == "" || phone == "" {
-		http.Error(w, "Name and phone are required", http.StatusBadRequest)
+	// Get or create invitation
+	invitationID, ok := s.getOrCreateInvitation(formData, w)
+	if !ok {
 		return
-	}
-
-	// Normalize phone number to E.164 format
-	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
-	if err != nil {
-		errorMsg := "Invalid phone number format"
-		if lang == "ro" {
-			errorMsg = "Număr de telefon invalid"
-		}
-		http.Error(w, errorMsg, http.StatusBadRequest)
-		return
-	}
-	phone = normalizedPhone
-
-	// Parse kids count
-	kidsCount := 0
-	if kidsCountStr != "" {
-		fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
-	}
-
-	// Get invitation by token
-	var invitationID int64
-	if token != "" {
-		invitation, err := s.db.GetInvitationByToken(token)
-		if err != nil {
-			http.Error(w, "Invalid invitation token", http.StatusBadRequest)
-			return
-		}
-		invitationID = invitation.ID
-	} else {
-		// If no token, create a new invitation
-		invitation, err := s.db.CreateInvitation(guestName, phone, "")
-		if err != nil {
-			http.Error(w, "Failed to create invitation", http.StatusInternalServerError)
-			return
-		}
-		invitationID = invitation.ID
 	}
 
 	// Create response
 	plusOneName := ""
-	if hasPartner {
+	if formData.hasPartner {
 		plusOneName = "Partner" // We don't collect partner name in this form
 	}
 
-	_, respErr := s.db.CreateResponse(invitationID, attending, hasPartner, plusOneName, guestName, kidsCount, menuPreference, companionMenuPreference, comment)
-	if respErr != nil {
+	_, err := s.db.CreateResponse(
+		invitationID,
+		formData.attending,
+		formData.hasPartner,
+		plusOneName,
+		formData.guestName,
+		formData.kidsCount,
+		formData.menuPreference,
+		formData.companionMenuPreference,
+		formData.comment,
+	)
+	if err != nil {
 		http.Error(w, "Failed to save response", http.StatusInternalServerError)
 		return
 	}
 
 	// Redirect to thank you page with language
 	redirectURL := "/?submitted=true&lang=" + string(lang)
-	if token != "" {
-		redirectURL += "&token=" + token
+	if formData.token != "" {
+		redirectURL += "&token=" + formData.token
 	}
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
@@ -360,13 +421,107 @@ func (s *Server) handleAdminUpdateInvitation(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, "/admin/invitations", http.StatusSeeOther)
 }
 
-func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) {
-	invitations, err := s.db.GetAllInvitationsWithResponses()
-	if err != nil {
-		http.Error(w, "Failed to load invitations", http.StatusInternalServerError)
-		return
+// csvRowData holds formatted data for a single CSV row
+type csvRowData struct {
+	name                    string
+	phone                   string
+	sent                    string
+	opened                  string
+	responded               string
+	attending               string
+	plusOne                 string
+	kidsCount               string
+	menuPreference          string
+	companionMenuPreference string
+	comment                 string
+}
+
+// escapeCSVField escapes a string for CSV format
+func escapeCSVField(field string) string {
+	// Escape double quotes by doubling them
+	escaped := strings.ReplaceAll(field, "\"", "\"\"")
+	// Replace newlines with spaces for comment fields
+	escaped = strings.ReplaceAll(escaped, "\n", " ")
+	return escaped
+}
+
+// formatInvitationForCSV converts an invitation to CSV row data
+func formatInvitationForCSV(inv *database.InvitationWithResponse) csvRowData {
+	row := csvRowData{
+		name:                    escapeCSVField(inv.GuestName),
+		phone:                   escapeCSVField(inv.Phone),
+		sent:                    "Nu",
+		opened:                  "Nu",
+		responded:               "Nu",
+		attending:               "-",
+		plusOne:                 "-",
+		kidsCount:               "-",
+		menuPreference:          "-",
+		companionMenuPreference: "-",
+		comment:                 "-",
 	}
 
+	// Format sent status
+	if inv.SentAt.Valid {
+		row.sent = "Da"
+	}
+
+	// Format opened status
+	if inv.OpenedAt.Valid {
+		row.opened = "Da"
+	}
+
+	// Format responded status
+	if inv.RespondedAt.Valid {
+		row.responded = "Da"
+	}
+
+	// Format response data if available
+	if inv.Response != nil {
+		if inv.Response.Attending {
+			row.attending = "Da"
+		} else {
+			row.attending = "Nu"
+		}
+
+		if inv.Response.PlusOne {
+			row.plusOne = "Da"
+		} else {
+			row.plusOne = "Nu"
+		}
+
+		if inv.Response.KidsCount > 0 {
+			row.kidsCount = fmt.Sprintf("%d", inv.Response.KidsCount)
+		} else {
+			row.kidsCount = "0"
+		}
+
+		if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
+			row.menuPreference = inv.Response.MenuPreference.String
+		}
+
+		if inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
+			row.companionMenuPreference = inv.Response.CompanionMenuPreference.String
+		}
+
+		if inv.Response.Comment.Valid {
+			row.comment = escapeCSVField(inv.Response.Comment.String)
+		}
+	}
+
+	return row
+}
+
+// buildCSVRow creates a CSV line from row data
+func buildCSVRow(row csvRowData) string {
+	return fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+		row.name, row.phone, row.sent, row.opened, row.responded,
+		row.attending, row.plusOne, row.kidsCount,
+		row.menuPreference, row.companionMenuPreference, row.comment)
+}
+
+// writeCSVHeaders sets HTTP headers and writes CSV header row
+func writeCSVHeaders(w http.ResponseWriter) {
 	// Set CSV headers
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", "attachment; filename=rsvp-list.csv")
@@ -376,70 +531,22 @@ func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) 
 
 	// Write CSV header
 	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,+1,Copii,Meniu,Meniu Însoțitor,Mesaj\n"))
+}
+
+func (s *Server) handleAdminDownloadCSV(w http.ResponseWriter, r *http.Request) {
+	invitations, err := s.db.GetAllInvitationsWithResponses()
+	if err != nil {
+		http.Error(w, "Failed to load invitations", http.StatusInternalServerError)
+		return
+	}
+
+	// Write CSV headers
+	writeCSVHeaders(w)
 
 	// Write data rows
 	for _, inv := range invitations {
-		// Escape CSV fields
-		name := strings.ReplaceAll(inv.GuestName, "\"", "\"\"")
-		phone := strings.ReplaceAll(inv.Phone, "\"", "\"\"")
-
-		sent := "Nu"
-		if inv.SentAt.Valid {
-			sent = "Da"
-		}
-
-		opened := "Nu"
-		if inv.OpenedAt.Valid {
-			opened = "Da"
-		}
-
-		responded := "Nu"
-		if inv.RespondedAt.Valid {
-			responded = "Da"
-		}
-
-		attending := "-"
-		plusOne := "-"
-		kidsCount := "-"
-		menuPreference := "-"
-		companionMenuPreference := "-"
-		comment := "-"
-
-		if inv.Response != nil {
-			if inv.Response.Attending {
-				attending = "Da"
-			} else {
-				attending = "Nu"
-			}
-
-			if inv.Response.PlusOne {
-				plusOne = "Da"
-			} else {
-				plusOne = "Nu"
-			}
-
-			if inv.Response.KidsCount > 0 {
-				kidsCount = fmt.Sprintf("%d", inv.Response.KidsCount)
-			} else {
-				kidsCount = "0"
-			}
-
-			if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
-				menuPreference = inv.Response.MenuPreference.String
-			}
-
-			if inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
-				companionMenuPreference = inv.Response.CompanionMenuPreference.String
-			}
-
-			if inv.Response.Comment.Valid {
-				comment = strings.ReplaceAll(inv.Response.Comment.String, "\"", "\"\"")
-				comment = strings.ReplaceAll(comment, "\n", " ")
-			}
-		}
-
-		line := fmt.Sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-			name, phone, sent, opened, responded, attending, plusOne, kidsCount, menuPreference, companionMenuPreference, comment)
+		row := formatInvitationForCSV(inv)
+		line := buildCSVRow(row)
 		w.Write([]byte(line))
 	}
 }
