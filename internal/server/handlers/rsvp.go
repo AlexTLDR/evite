@@ -79,7 +79,7 @@ func parseRSVPForm(r *http.Request, w http.ResponseWriter, lang i18n.Language) (
 	kidsCountStr := r.FormValue("kids_count")
 	if kidsCountStr != "" {
 		// Ignore error - default to 0 if parsing fails
-		fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
+		_, _ = fmt.Sscanf(kidsCountStr, "%d", &kidsCount)
 		// Ensure non-negative
 		if kidsCount < 0 {
 			kidsCount = 0
