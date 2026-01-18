@@ -117,7 +117,7 @@ func writeCSVHeaders(w http.ResponseWriter) {
 	w.Write([]byte{0xEF, 0xBB, 0xBF})
 
 	// Write CSV header
-	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,+1,Copii,Meniu,Meniu Însoțitor,Mesaj\n"))
+	w.Write([]byte("Nume,Telefon,Trimis,Deschis,Răspuns,Participă,Plus 1,Copii,Meniu,Meniu Însoțitor,Mesaj\n"))
 }
 
 // HandleAdminDownloadCSV exports invitations to CSV
