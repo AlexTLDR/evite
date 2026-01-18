@@ -5,6 +5,11 @@ metadata:
   namespace: evite
 spec:
   replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Allow 1 extra pod during update (total 4 pods)
+      maxUnavailable: 0  # Keep all 3 pods running during update
   selector:
     matchLabels:
       app: evite
