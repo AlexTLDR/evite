@@ -4,8 +4,10 @@ metadata:
   name: evite-ingress
   namespace: evite
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # If using cert-manager
-    kubernetes.io/ingress.class: "traefik"  # k3s uses Traefik by default
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/router.middlewares: evite-redirect-https@kubernetescrd
 spec:
   tls:
   - hosts:
