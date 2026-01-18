@@ -79,15 +79,20 @@ jobs:
               -n external-secrets-system \
               --create-namespace \
               --set installCRDs=true
-            
-            echo "Waiting for External Secrets Operator to be ready..."
-            kubectl wait --for=condition=ready pod \
-              -l app.kubernetes.io/name=external-secrets \
-              -n external-secrets-system \
-              --timeout=120s
           else
             echo "External Secrets Operator already installed"
           fi
+
+          # Always wait for External Secrets Operator to be ready
+          echo "Waiting for External Secrets Operator to be ready..."
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=external-secrets \
+            -n external-secrets-system \
+            --timeout=120s
+
+          # Wait for CRDs to be fully registered
+          echo "Waiting for CRDs to be registered..."
+          sleep 5
       
       - name: Create namespace
         run: |
