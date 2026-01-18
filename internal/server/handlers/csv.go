@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -32,69 +33,68 @@ func escapeCSVField(field string) string {
 	return escaped
 }
 
+// formatYesNo converts a boolean to "Da"/"Nu"
+func formatYesNo(value bool) string {
+	if value {
+		return "Da"
+	}
+	return "Nu"
+}
+
+// formatNullableString returns the string value or a default if null/empty
+func formatNullableString(ns sql.NullString, defaultValue string) string {
+	if ns.Valid && ns.String != "" {
+		return ns.String
+	}
+	return defaultValue
+}
+
+// formatResponseData extracts and formats all response fields
+func formatResponseData(response *database.Response) (attending, plusOne, kidsCount, menuPref, companionMenuPref, comment string) {
+	// Default values when no response
+	if response == nil {
+		return "-", "-", "-", "-", "-", "-"
+	}
+
+	// Format boolean fields
+	attending = formatYesNo(response.Attending)
+	plusOne = formatYesNo(response.PlusOne)
+
+	// Format kids count
+	if response.KidsCount > 0 {
+		kidsCount = fmt.Sprintf("%d", response.KidsCount)
+	} else {
+		kidsCount = "0"
+	}
+
+	// Format menu preferences
+	menuPref = formatNullableString(response.MenuPreference, "-")
+	companionMenuPref = formatNullableString(response.CompanionMenuPreference, "-")
+
+	// Format comment with escaping
+	if response.Comment.Valid {
+		comment = escapeCSVField(response.Comment.String)
+	} else {
+		comment = "-"
+	}
+
+	return
+}
+
 // formatInvitationForCSV converts an invitation to CSV row data
 func formatInvitationForCSV(inv *database.InvitationWithResponse) csvRowData {
 	row := csvRowData{
-		name:                    escapeCSVField(inv.GuestName),
-		phone:                   escapeCSVField(inv.Phone),
-		sent:                    "Nu",
-		opened:                  "Nu",
-		responded:               "Nu",
-		attending:               "-",
-		plusOne:                 "-",
-		kidsCount:               "-",
-		menuPreference:          "-",
-		companionMenuPreference: "-",
-		comment:                 "-",
+		name:      escapeCSVField(inv.GuestName),
+		phone:     escapeCSVField(inv.Phone),
+		sent:      formatYesNo(inv.SentAt.Valid),
+		opened:    formatYesNo(inv.OpenedAt.Valid),
+		responded: formatYesNo(inv.RespondedAt.Valid),
 	}
 
-	// Format sent status
-	if inv.SentAt.Valid {
-		row.sent = "Da"
-	}
-
-	// Format opened status
-	if inv.OpenedAt.Valid {
-		row.opened = "Da"
-	}
-
-	// Format responded status
-	if inv.RespondedAt.Valid {
-		row.responded = "Da"
-	}
-
-	// Format response data if available
-	if inv.Response != nil {
-		if inv.Response.Attending {
-			row.attending = "Da"
-		} else {
-			row.attending = "Nu"
-		}
-
-		if inv.Response.PlusOne {
-			row.plusOne = "Da"
-		} else {
-			row.plusOne = "Nu"
-		}
-
-		if inv.Response.KidsCount > 0 {
-			row.kidsCount = fmt.Sprintf("%d", inv.Response.KidsCount)
-		} else {
-			row.kidsCount = "0"
-		}
-
-		if inv.Response.MenuPreference.Valid && inv.Response.MenuPreference.String != "" {
-			row.menuPreference = inv.Response.MenuPreference.String
-		}
-
-		if inv.Response.CompanionMenuPreference.Valid && inv.Response.CompanionMenuPreference.String != "" {
-			row.companionMenuPreference = inv.Response.CompanionMenuPreference.String
-		}
-
-		if inv.Response.Comment.Valid {
-			row.comment = escapeCSVField(inv.Response.Comment.String)
-		}
-	}
+	// Format response data
+	row.attending, row.plusOne, row.kidsCount,
+		row.menuPreference, row.companionMenuPreference,
+		row.comment = formatResponseData(inv.Response)
 
 	return row
 }
