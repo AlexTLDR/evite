@@ -32,8 +32,8 @@ RUN apk --no-cache add ca-certificates postgresql-client tzdata
 ENV TZ=Europe/Bucharest
 
 # Create app user
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser
+RUN addgroup -g 1000 alex && \
+    adduser -D -u 1000 -G alex alex
 
 # Set working directory
 WORKDIR /app
@@ -46,10 +46,10 @@ COPY --from=builder /app/static ./static
 COPY --from=builder /app/migrations ./migrations
 
 # Set ownership
-RUN chown -R appuser:appuser /app
+RUN chown -R alex:alex /app
 
 # Switch to non-root user
-USER appuser
+USER alex
 
 # Expose port
 EXPOSE 8080

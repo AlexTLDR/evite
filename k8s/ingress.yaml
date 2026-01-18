@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: evite-ingress
+  namespace: evite
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # If using cert-manager
+    kubernetes.io/ingress.class: "traefik"  # k3s uses Traefik by default
+spec:
+  tls:
+  - hosts:
+    - invitatie.dotsat.work
+    secretName: evite-tls
+  rules:
+  - host: invitatie.dotsat.work
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: evite
+            port:
+              number: 80
+

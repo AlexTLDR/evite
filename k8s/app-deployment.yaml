@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evite
+  namespace: evite
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: evite
+  template:
+    metadata:
+      labels:
+        app: evite
+    spec:
+      containers:
+      - name: evite
+        image: ghcr.io/alextldr/evite:latest  # Update with your actual image registry
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: evite-config
+        - secretRef:
+            name: evite-secret
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z postgres-0.postgres.evite.svc.cluster.local 5432; do echo waiting for postgres; sleep 2; done;']
+

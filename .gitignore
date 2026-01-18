@@ -45,3 +45,11 @@ static/css/tailwind.css
 
 # Binary files
 bin/
+
+# Kubernetes secrets with actual values (DO NOT COMMIT)
+k8s/app-secret.prod.yaml
+k8s/app-configmap.prod.yaml
+k8s/postgres-secret.prod.yaml
+
+# AWS credentials (DO NOT COMMIT)
+k8s/aws-credentials-secret.yaml
