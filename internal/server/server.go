@@ -5,6 +5,7 @@ import (
 
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
+	"github.com/AlexTLDR/evite/internal/server/handlers"
 	"github.com/gorilla/sessions"
 )
 
@@ -13,6 +14,24 @@ type Server struct {
 	db           *database.DB
 	sessionStore *sessions.CookieStore
 	router       *http.ServeMux
+}
+
+// GetDB implements handlers.Server interface
+func (s *Server) GetDB() *database.DB {
+	return s.db
+}
+
+// GetConfig implements handlers.Server interface
+func (s *Server) GetConfig() *config.Config {
+	return s.config
+}
+
+// GetCurrentUser implements handlers.AdminServer interface
+func (s *Server) GetCurrentUser(r *http.Request) (string, string) {
+	session, _ := s.sessionStore.Get(r, "auth-session")
+	email, _ := session.Values["email"].(string)
+	name, _ := session.Values["name"].(string)
+	return email, name
 }
 
 func New(cfg *config.Config, db *database.DB) *Server {
@@ -33,9 +52,9 @@ func (s *Server) setupRoutes() {
 	s.router.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Public routes
-	s.router.HandleFunc("/", s.handleHome)
-	s.router.HandleFunc("/rsvp/", s.handleRSVP)
-	s.router.HandleFunc("/rsvp/submit", s.handleRSVPSubmit)
+	s.router.HandleFunc("/", handlers.HandleHome(s))
+	s.router.HandleFunc("/rsvp/", handlers.HandleRSVP(s))
+	s.router.HandleFunc("/rsvp/submit", handlers.HandleRSVPSubmit(s))
 
 	// Auth routes
 	s.router.HandleFunc("/auth/google", s.handleGoogleLogin)
@@ -43,15 +62,15 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/auth/logout", s.handleLogout)
 
 	// Admin routes (protected)
-	s.router.HandleFunc("/admin", s.requireAuth(s.handleAdminDashboard))
-	s.router.HandleFunc("/admin/invitations", s.requireAuth(s.handleAdminInvitations))
-	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(s.handleAdminNewInvitation))
-	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(s.handleAdminCreateInvitation))
-	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(s.handleAdminEditInvitation))
-	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(s.handleAdminUpdateInvitation))
-	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(s.handleAdminDeleteInvitation))
-	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(s.handleAdminMarkSent))
-	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(s.handleAdminDownloadCSV))
+	s.router.HandleFunc("/admin", s.requireAuth(handlers.HandleAdminDashboard(s)))
+	s.router.HandleFunc("/admin/invitations", s.requireAuth(handlers.HandleAdminInvitations(s)))
+	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(handlers.HandleAdminNewInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(handlers.HandleAdminCreateInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(handlers.HandleAdminEditInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(handlers.HandleAdminUpdateInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(handlers.HandleAdminDeleteInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(handlers.HandleAdminMarkSent(s)))
+	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(handlers.HandleAdminDownloadCSV(s)))
 }
 
 func (s *Server) Start(addr string) error {
