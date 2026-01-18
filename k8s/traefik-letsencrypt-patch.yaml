@@ -29,7 +29,7 @@ spec:
     additionalArguments:
       - "--certificatesresolvers.letsencrypt.acme.email=alex@alextldr.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
     persistence:
       enabled: true
       name: data
