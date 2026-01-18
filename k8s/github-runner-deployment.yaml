@@ -21,13 +21,18 @@ spec:
         - sh
         - -c
         - |
-          apk add --no-cache curl
+          apk add --no-cache curl openssl
+
+          # Install kubectl
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           mv kubectl /tools/kubectl
 
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
-          mv /usr/local/bin/helm /tools/helm
+          # Install helm
+          curl -fsSL https://get.helm.sh/helm-v3.17.0-linux-amd64.tar.gz -o helm.tar.gz
+          tar -zxvf helm.tar.gz
+          mv linux-amd64/helm /tools/helm
+          chmod +x /tools/helm
         volumeMounts:
         - name: tools
           mountPath: /tools
