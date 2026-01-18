@@ -7,12 +7,28 @@
 ✅ **Created Kubernetes manifests** for External Secrets Operator integration
 ✅ **Updated Dockerfile** to run as non-root user `alex`
 ✅ **Updated .gitignore** to prevent committing secrets
+✅ **Deployed self-hosted GitHub Actions runner** in k3s cluster (no need to expose k3s API to internet)
 
 ---
 
 ## Architecture Overview
 
-```
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                         GitHub                               │
+│  - Code push triggers workflow                               │
+│  - Sends job to self-hosted runner                           │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│           Self-Hosted Runner (in k3s cluster)                │
+│  - Runs in github-runner namespace                           │
+│  - Polls GitHub for jobs                                     │
+│  - Executes deployment commands locally                      │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      AWS Parameter Store                     │
 │  /evite/google-client-id, /evite/session-secret, etc.       │
@@ -48,10 +64,20 @@
 ## Files Created
 
 ### External Secrets Manifests (NEW - USED IN PRODUCTION)
+
 - `k8s/secretstore.yaml` - Connects to AWS Parameter Store
 - `k8s/externalsecret-app.yaml` - Pulls app secrets from AWS
 - `k8s/externalsecret-postgres.yaml` - Pulls PostgreSQL secrets from AWS
 - `k8s/externalsecret-config.yaml` - Pulls configuration from AWS
+
+### Self-Hosted GitHub Actions Runner (DEPLOYED IN K3S)
+
+- `k8s/github-runner-namespace.yaml` - Creates `github-runner` namespace
+- `k8s/github-runner-serviceaccount.yaml` - Service account with cluster-admin permissions
+- `k8s/github-runner-deployment.yaml` - Runner pod deployment
+- **Runner is running in your k3s cluster** (no need to expose k3s API to internet)
+- **Runner name**: `k3s-runner`
+- **Status**: Check at https://github.com/AlexTLDR/evite/settings/actions/runners
 
 ### Documentation
 - `k8s/DEPLOYMENT-GUIDE.md` - Step-by-step deployment instructions
