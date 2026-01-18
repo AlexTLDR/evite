@@ -14,10 +14,29 @@ spec:
         app: github-runner
     spec:
       serviceAccountName: github-runner
+      initContainers:
+      - name: install-tools
+        image: alpine:latest
+        command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache curl
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          mv kubectl /tools/kubectl
+
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sh
+          mv /usr/local/bin/helm /tools/helm
+        volumeMounts:
+        - name: tools
+          mountPath: /tools
       containers:
       - name: runner
         image: myoung34/github-runner:latest
         env:
+        - name: PATH
+          value: "/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         - name: RUNNER_NAME
           value: "k3s-runner"
         - name: RUNNER_WORKDIR
@@ -38,6 +57,8 @@ spec:
         volumeMounts:
         - name: work
           mountPath: /tmp/runner
+        - name: tools
+          mountPath: /tools
         resources:
           requests:
             memory: "512Mi"
@@ -47,5 +68,7 @@ spec:
             cpu: "2000m"
       volumes:
       - name: work
+        emptyDir: {}
+      - name: tools
         emptyDir: {}
 
