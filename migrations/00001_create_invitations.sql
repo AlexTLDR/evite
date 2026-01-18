@@ -1,15 +1,15 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE invitations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     guest_name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     token TEXT NOT NULL UNIQUE,
     invite_message TEXT,
-    sent_at DATETIME NULL,
-    opened_at DATETIME NULL,
-    responded_at DATETIME NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    sent_at TIMESTAMP NULL,
+    opened_at TIMESTAMP NULL,
+    responded_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_invitations_token ON invitations(token);

@@ -25,7 +25,7 @@ Perfect for:
 ## Tech Stack
 
 - **Backend**: Go 1.25+
-- **Database**: SQLite with Goose migrations
+- **Database**: PostgreSQL with Goose migrations
 - **Templates**: Templ
 - **Auth**: Google OAuth 2.0
 - **Sessions**: Gorilla Sessions

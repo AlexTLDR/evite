@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	// Database
-	DatabasePath string
+	DatabaseURL string
 
 	// Google OAuth
 	GoogleClientID     string
@@ -34,7 +34,7 @@ type Config struct {
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		DatabasePath:       getEnv("DATABASE_PATH", "./evite.db"),
+		DatabaseURL:        getEnv("DATABASE_URL", "postgres://evite:evite@localhost:5432/evite?sslmode=disable"),
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 		GoogleRedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),

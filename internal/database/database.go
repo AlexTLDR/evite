@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 )
 
@@ -12,8 +12,8 @@ type DB struct {
 	*sql.DB
 }
 
-func New(dbPath string) (*DB, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+func New(databaseURL string) (*DB, error) {
+	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -30,7 +30,7 @@ func New(dbPath string) (*DB, error) {
 }
 
 func (db *DB) Migrate() error {
-	if err := goose.SetDialect("sqlite3"); err != nil {
+	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("failed to set goose dialect: %w", err)
 	}
 

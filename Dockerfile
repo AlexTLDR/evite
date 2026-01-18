@@ -2,7 +2,7 @@
 FROM golang:alpine AS builder
 
 # Install build dependencies including Node.js for Tailwind
-RUN apk add --no-cache git gcc musl-dev sqlite-dev nodejs npm
+RUN apk add --no-cache git gcc musl-dev nodejs npm
 
 # Set working directory
 WORKDIR /app
@@ -26,7 +26,7 @@ RUN ["/bin/sh", "-c", "\
 FROM alpine:3
 
 # Install runtime dependencies
-RUN apk --no-cache add ca-certificates sqlite-libs tzdata
+RUN apk --no-cache add ca-certificates postgresql-client tzdata
 
 # Set timezone to Europe/Bucharest (EEST)
 ENV TZ=Europe/Bucharest
@@ -45,8 +45,8 @@ COPY --from=builder /app/server .
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/migrations ./migrations
 
-# Create data directory for SQLite database
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
+# Set ownership
+RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser

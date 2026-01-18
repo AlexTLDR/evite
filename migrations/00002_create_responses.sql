@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE responses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     invitation_id INTEGER NOT NULL,
     attending BOOLEAN NOT NULL,
     plus_one BOOLEAN NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE responses (
     guest_name_tag TEXT NOT NULL,
     kids_count INTEGER NOT NULL DEFAULT 0,
     comment TEXT,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_latest BOOLEAN DEFAULT TRUE,
     FOREIGN KEY(invitation_id) REFERENCES invitations(id)
 );

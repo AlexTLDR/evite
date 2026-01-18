@@ -3,7 +3,7 @@ version: '3'
 vars:
   BINARY_NAME: evite
   MAIN_PATH: ./cmd/server
-  DB_PATH: ./evite.db
+  DB_URL: postgres://evite:evite@localhost:5432/evite?sslmode=disable
 
 tasks:
   default:
@@ -86,41 +86,25 @@ tasks:
       - go vet ./...
 
   clean:
-    desc: Clean build artifacts and database
+    desc: Clean build artifacts
     cmds:
       - rm -f {{.BINARY_NAME}}
-      - rm -f {{.DB_PATH}}
-      - rm -f {{.DB_PATH}}-shm
-      - rm -f {{.DB_PATH}}-wal
       - rm -f coverage.out coverage.html
-
-  db-create:
-    desc: Create database and run migrations
-    cmds:
-      - go run {{.MAIN_PATH}}/main.go &
-      - sleep 2
-      - pkill -f {{.BINARY_NAME}}
-
-  db-reset:
-    desc: Reset database (delete and recreate)
-    cmds:
-      - task: clean
-      - task: db-create
 
   migrate-up:
     desc: Run migrations up
     cmds:
-      - goose -dir migrations sqlite3 {{.DB_PATH}} up
+      - goose -dir migrations postgres "{{.DB_URL}}" up
 
   migrate-down:
     desc: Run migrations down
     cmds:
-      - goose -dir migrations sqlite3 {{.DB_PATH}} down
+      - goose -dir migrations postgres "{{.DB_URL}}" down
 
   migrate-status:
     desc: Check migration status
     cmds:
-      - goose -dir migrations sqlite3 {{.DB_PATH}} status
+      - goose -dir migrations postgres "{{.DB_URL}}" status
 
   migrate-create:
     desc: "Create a new migration (usage: task migrate-create NAME=migration_name)"
