@@ -32,7 +32,7 @@ func (db *DB) CreateInvitation(guestName, phone, inviteMessage string) (*Invitat
 
 		// Check if a token already exists
 		var exists bool
-		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM invitations WHERE token = ?)", token).Scan(&exists)
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM invitations WHERE token = $1)", token).Scan(&exists)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check token uniqueness: %w", err)
 		}
@@ -46,18 +46,14 @@ func (db *DB) CreateInvitation(guestName, phone, inviteMessage string) (*Invitat
 		}
 	}
 
-	result, err := db.Exec(
-		`INSERT INTO invitations (guest_name, phone, token, invite_message) 
-		 VALUES (?, ?, ?, ?)`,
+	var id int64
+	err = db.QueryRow(
+		`INSERT INTO invitations (guest_name, phone, token, invite_message)
+		 VALUES ($1, $2, $3, $4) RETURNING id`,
 		guestName, phone, token, inviteMessage,
-	)
+	).Scan(&id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create invitation: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get last insert id: %w", err)
 	}
 
 	return db.GetInvitationByID(id)
@@ -68,7 +64,7 @@ func (db *DB) GetInvitationByID(id int64) (*Invitation, error) {
 	inv := &Invitation{}
 	err := db.QueryRow(
 		`SELECT id, guest_name, phone, token, invite_message, sent_at, opened_at, responded_at, created_at
-		 FROM invitations WHERE id = ?`,
+		 FROM invitations WHERE id = $1`,
 		id,
 	).Scan(&inv.ID, &inv.GuestName, &inv.Phone, &inv.Token, &inv.InviteMessage,
 		&inv.SentAt, &inv.OpenedAt, &inv.RespondedAt, &inv.CreatedAt)
@@ -85,7 +81,7 @@ func (db *DB) GetInvitationByToken(token string) (*Invitation, error) {
 	inv := &Invitation{}
 	err := db.QueryRow(
 		`SELECT id, guest_name, phone, token, invite_message, sent_at, opened_at, responded_at, created_at
-		 FROM invitations WHERE token = ?`,
+		 FROM invitations WHERE token = $1`,
 		token,
 	).Scan(&inv.ID, &inv.GuestName, &inv.Phone, &inv.Token, &inv.InviteMessage,
 		&inv.SentAt, &inv.OpenedAt, &inv.RespondedAt, &inv.CreatedAt)
@@ -130,7 +126,7 @@ func (db *DB) GetAllInvitations() ([]*Invitation, error) {
 // MarkAsSent marks an invitation as sent
 func (db *DB) MarkAsSent(id int64) error {
 	_, err := db.Exec(
-		`UPDATE invitations SET sent_at = ? WHERE id = ?`,
+		`UPDATE invitations SET sent_at = $1 WHERE id = $2`,
 		time.Now(), id,
 	)
 	if err != nil {
@@ -142,7 +138,7 @@ func (db *DB) MarkAsSent(id int64) error {
 // MarkAsOpened marks an invitation as opened (when guest visits RSVP page)
 func (db *DB) MarkAsOpened(id int64) error {
 	_, err := db.Exec(
-		`UPDATE invitations SET opened_at = ? WHERE id = ? AND opened_at IS NULL`,
+		`UPDATE invitations SET opened_at = $1 WHERE id = $2 AND opened_at IS NULL`,
 		time.Now(), id,
 	)
 	if err != nil {
@@ -154,7 +150,7 @@ func (db *DB) MarkAsOpened(id int64) error {
 // UpdateInvitation updates an invitation's guest name and phone
 func (db *DB) UpdateInvitation(id int64, guestName, phone string) error {
 	_, err := db.Exec(
-		`UPDATE invitations SET guest_name = ?, phone = ? WHERE id = ?`,
+		`UPDATE invitations SET guest_name = $1, phone = $2 WHERE id = $3`,
 		guestName, phone, id,
 	)
 	if err != nil {
@@ -172,13 +168,13 @@ func (db *DB) DeleteInvitation(id int64) error {
 	defer func() { _ = tx.Rollback() }()
 
 	// Delete all responses first
-	_, err = tx.Exec(`DELETE FROM responses WHERE invitation_id = ?`, id)
+	_, err = tx.Exec(`DELETE FROM responses WHERE invitation_id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete responses: %w", err)
 	}
 
 	// Delete the invitation
-	_, err = tx.Exec(`DELETE FROM invitations WHERE id = ?`, id)
+	_, err = tx.Exec(`DELETE FROM invitations WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete invitation: %w", err)
 	}

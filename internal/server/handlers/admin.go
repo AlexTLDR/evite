@@ -179,7 +179,7 @@ func updateInvitationMessage(s Server, inv *database.Invitation, messageTemplate
 	finalMessage := strings.Replace(messageTemplate, "{{TOKEN}}", inv.Token, 1)
 	finalMessage = strings.Replace(finalMessage, "{{RSVP_LINK}}", rsvpLink, 1)
 
-	_, err := s.GetDB().Exec("UPDATE invitations SET invite_message = ? WHERE id = ?", finalMessage, inv.ID)
+	_, err := s.GetDB().Exec("UPDATE invitations SET invite_message = $1 WHERE id = $2", finalMessage, inv.ID)
 	return err
 }
 

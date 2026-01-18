@@ -16,7 +16,7 @@ func (db *DB) CreateResponse(invitationID int64, attending, plusOne bool, plusOn
 
 	// Mark all previous responses as not latest
 	_, err = tx.Exec(
-		`UPDATE responses SET is_latest = FALSE WHERE invitation_id = ?`,
+		`UPDATE responses SET is_latest = FALSE WHERE invitation_id = $1`,
 		invitationID,
 	)
 	if err != nil {
@@ -38,18 +38,19 @@ func (db *DB) CreateResponse(invitationID int64, attending, plusOne bool, plusOn
 		commentSQL = comment
 	}
 
-	result, err := tx.Exec(
+	var id int64
+	err = tx.QueryRow(
 		`INSERT INTO responses (invitation_id, attending, plus_one, plus_one_name, guest_name_tag, kids_count, menu_preference, companion_menu_preference, comment, is_latest)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE) RETURNING id`,
 		invitationID, attending, plusOne, plusOneNameSQL, guestNameTag, kidsCount, menuPreferenceSQL, companionMenuPreferenceSQL, commentSQL,
-	)
+	).Scan(&id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create response: %w", err)
 	}
 
 	// Update invitation responded_at
 	_, err = tx.Exec(
-		`UPDATE invitations SET responded_at = ? WHERE id = ?`,
+		`UPDATE invitations SET responded_at = $1 WHERE id = $2`,
 		time.Now(), invitationID,
 	)
 	if err != nil {
@@ -60,11 +61,6 @@ func (db *DB) CreateResponse(invitationID int64, attending, plusOne bool, plusOn
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get last insert id: %w", err)
-	}
-
 	return db.GetResponseByID(id)
 }
 
@@ -73,7 +69,7 @@ func (db *DB) GetResponseByID(id int64) (*Response, error) {
 	resp := &Response{}
 	err := db.QueryRow(
 		`SELECT id, invitation_id, attending, plus_one, plus_one_name, guest_name_tag, kids_count, menu_preference, companion_menu_preference, comment, submitted_at, is_latest
-		 FROM responses WHERE id = ?`,
+		 FROM responses WHERE id = $1`,
 		id,
 	).Scan(&resp.ID, &resp.InvitationID, &resp.Attending, &resp.PlusOne, &resp.PlusOneName,
 		&resp.GuestNameTag, &resp.KidsCount, &resp.MenuPreference, &resp.CompanionMenuPreference, &resp.Comment, &resp.SubmittedAt, &resp.IsLatest)
@@ -90,7 +86,7 @@ func (db *DB) GetLatestResponseByInvitationID(invitationID int64) (*Response, er
 	resp := &Response{}
 	err := db.QueryRow(
 		`SELECT id, invitation_id, attending, plus_one, plus_one_name, guest_name_tag, kids_count, menu_preference, companion_menu_preference, comment, submitted_at, is_latest
-		 FROM responses WHERE invitation_id = ? AND is_latest = TRUE`,
+		 FROM responses WHERE invitation_id = $1 AND is_latest = TRUE`,
 		invitationID,
 	).Scan(&resp.ID, &resp.InvitationID, &resp.Attending, &resp.PlusOne, &resp.PlusOneName,
 		&resp.GuestNameTag, &resp.KidsCount, &resp.MenuPreference, &resp.CompanionMenuPreference, &resp.Comment, &resp.SubmittedAt, &resp.IsLatest)
@@ -109,7 +105,7 @@ func (db *DB) GetLatestResponseByInvitationID(invitationID int64) (*Response, er
 func (db *DB) GetAllResponsesByInvitationID(invitationID int64) ([]*Response, error) {
 	rows, err := db.Query(
 		`SELECT id, invitation_id, attending, plus_one, plus_one_name, guest_name_tag, kids_count, menu_preference, companion_menu_preference, comment, submitted_at, is_latest
-		 FROM responses WHERE invitation_id = ? ORDER BY submitted_at DESC`,
+		 FROM responses WHERE invitation_id = $1 ORDER BY submitted_at DESC`,
 		invitationID,
 	)
 	if err != nil {
