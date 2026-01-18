@@ -33,23 +33,19 @@ spec:
           value: "repo"
         - name: LABELS
           value: "k3s,self-hosted"
+        - name: DOCKER_ENABLED
+          value: "false"
         volumeMounts:
         - name: work
           mountPath: /tmp/runner
-        - name: docker-sock
-          mountPath: /var/run/docker.sock
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "512Mi"
+            cpu: "500m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
       volumes:
       - name: work
         emptyDir: {}
-      - name: docker-sock
-        hostPath:
-          path: /var/run/docker.sock
-          type: Socket
 
