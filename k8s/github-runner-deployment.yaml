@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: github-runner
+  namespace: github-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: github-runner
+  template:
+    metadata:
+      labels:
+        app: github-runner
+    spec:
+      serviceAccountName: github-runner
+      containers:
+      - name: runner
+        image: myoung34/github-runner:latest
+        env:
+        - name: RUNNER_NAME
+          value: "k3s-runner"
+        - name: RUNNER_WORKDIR
+          value: "/tmp/runner"
+        - name: REPO_URL
+          value: "https://github.com/AlexTLDR/evite"
+        - name: ACCESS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-runner-token
+              key: token
+        - name: RUNNER_SCOPE
+          value: "repo"
+        - name: LABELS
+          value: "k3s,self-hosted"
+        volumeMounts:
+        - name: work
+          mountPath: /tmp/runner
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+      volumes:
+      - name: work
+        emptyDir: {}
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+
