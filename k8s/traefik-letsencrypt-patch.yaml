@@ -25,12 +25,11 @@ spec:
       effect: "NoSchedule"
     service:
       ipFamilyPolicy: "PreferDualStack"
-    # Let's Encrypt configuration (STAGING - for testing)
+    # Let's Encrypt configuration (PRODUCTION)
     additionalArguments:
       - "--certificatesresolvers.letsencrypt.acme.email=alex@alextldr.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
     persistence:
       enabled: true
       name: data
