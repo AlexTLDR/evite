@@ -185,36 +185,16 @@ func updateInvitationMessage(s Server, inv *database.Invitation, messageTemplate
 
 // generateInviteMessageTemplate creates an invitation message template
 func generateInviteMessageTemplate(s Server, guestName string, lang i18n.Language) string {
-	cfg := s.GetConfig()
-	if lang == i18n.Romanian {
-		return fmt.Sprintf(`Bună %s,
+	return fmt.Sprintf(`Bună %s,
 
-Fiica noastră se botează 🎉
+Cu multă bucurie și emoție, vă invităm să fiți alături de noi la botezul micuței noastre Anya-Maria. Detaliile evenimentului sunt în link-ul de mai jos:
 
-Evenimentul va avea loc pe 19 Aprilie 2026:
-- Biserica: %s
-- Restaurant: %s
-
-Te rugăm să confirmi prezența aici:
 {{RSVP_LINK}}
+
+Evenimentul va avea loc pe 19 Aprilie 2026
 
 Cu drag,
-Familia`, guestName, cfg.ChurchName, cfg.RestaurantName)
-	}
-
-	return fmt.Sprintf(`Hi %s,
-
-Our daughter is getting baptised 🎉
-
-The event will take place on April 19, 2026:
-- Church: %s
-- Restaurant: %s
-
-Please confirm your attendance here:
-{{RSVP_LINK}}
-
-With love,
-The Family`, guestName, cfg.ChurchName, cfg.RestaurantName)
+Familia Mureșeanu`, guestName)
 }
 
 // HandleAdminCreateInvitation creates a new invitation
