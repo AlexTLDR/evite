@@ -7,9 +7,15 @@ script themeScript(lightTheme, darkTheme string) {
 		document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
 
 		// Check if browser supports OKLCH colors
-		const supportsOKLCH = CSS.supports('color', 'oklch(0% 0 0)');
+		// Samsung Internet Browser may report support but not render correctly
+		const supportsOKLCH = CSS.supports && CSS.supports('color', 'oklch(0% 0 0)');
 
-		if (!supportsOKLCH) {
+		// Detect Samsung Internet Browser specifically
+		const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
+
+		// Apply fallbacks if OKLCH is not supported OR if it's Samsung Browser
+		// (Samsung Browser has issues with OKLCH even when it reports support)
+		if (!supportsOKLCH || isSamsungBrowser) {
 			// Apply hex color fallbacks for browsers that don't support OKLCH
 			const root = document.documentElement;
 
@@ -77,8 +83,11 @@ script alpineThemeStore(lightTheme, darkTheme string) {
 	document.addEventListener('alpine:init', () => {
 		// Helper function to apply OKLCH fallbacks
 		const applyOKLCHFallbacks = (theme) => {
-			const supportsOKLCH = CSS.supports('color', 'oklch(0% 0 0)');
-			if (supportsOKLCH) return; // No fallback needed
+			const supportsOKLCH = CSS.supports && CSS.supports('color', 'oklch(0% 0 0)');
+			const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
+
+			// Skip fallbacks only if OKLCH is supported AND it's NOT Samsung Browser
+			if (supportsOKLCH && !isSamsungBrowser) return; // No fallback needed
 
 			const root = document.documentElement;
 
