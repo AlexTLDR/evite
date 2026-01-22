@@ -6,132 +6,65 @@ This directory contains Kubernetes manifests for deploying the Evite application
 
 - **PostgreSQL StatefulSet**: Single instance with persistent storage (10Gi)
 - **Application Deployment**: 3 replicas for high availability
-- **Ingress**: Traefik ingress with TLS support
+- **Ingress Controller**: Traefik with automatic HTTPS via Let's Encrypt
+- **Ingress**: Standard Kubernetes Ingress with Traefik ingress controller
 
 ## Prerequisites
 
 1. **k3s cluster** running
 2. **kubectl** configured to access your cluster
-3. **Docker image** built and pushed to a registry (GitHub Container Registry, Docker Hub, etc.)
+3. **Docker image** built and pushed to a registry (GitHub Container Registry)
 4. **Domain name** configured with DNS pointing to your cluster
+5. **External Secrets Operator** installed in the cluster
+6. **AWS Parameter Store** configured with all required secrets
+7. **AWS IAM credentials** for External Secrets Operator
 
-## ⚠️ Security Best Practices
+## Secret Management
 
-**IMPORTANT**: The YAML files in this directory contain **placeholder values only**.
+This deployment uses **External Secrets Operator** to pull secrets from **AWS Parameter Store**.
 
-**DO NOT** edit these files with real secrets and commit them to Git!
+Secrets are **NOT** stored in Git or Kubernetes manifests. Instead:
+- All secrets are stored in AWS Parameter Store under `/evite/` prefix
+- External Secrets Operator syncs them to Kubernetes secrets automatically
+- See `DEPLOYMENT-GUIDE.md` for detailed setup instructions
 
-### Recommended Workflow:
+## Quick Deployment
 
-**Option 1: Use production files (gitignored)**
-
-```bash
-# Copy templates to production files (these are gitignored)
-cp k8s/app-secret.yaml k8s/app-secret.prod.yaml
-cp k8s/app-configmap.yaml k8s/app-configmap.prod.yaml
-cp k8s/postgres-secret.yaml k8s/postgres-secret.prod.yaml
-
-# Edit the .prod.yaml files with your actual values
-nano k8s/app-secret.prod.yaml
-nano k8s/app-configmap.prod.yaml
-nano k8s/postgres-secret.prod.yaml
-```
-
-**Option 2: Create secrets directly with kubectl (most secure)**
-
-```bash
-# Create namespace first
-kubectl apply -f k8s/namespace.yaml
-
-# Create app secret from command line (secrets never touch filesystem)
-kubectl create secret generic evite-secret \
-  --namespace=evite \
-  --from-literal=GOOGLE_CLIENT_ID="your-actual-client-id" \
-  --from-literal=GOOGLE_CLIENT_SECRET="your-actual-client-secret" \
-  --from-literal=SESSION_SECRET="$(openssl rand -base64 32)" \
-  --from-literal=DATABASE_URL="postgres://evite:your-password@postgres-0.postgres.evite.svc.cluster.local:5432/evite?sslmode=disable"
-
-# Create postgres secret
-kubectl create secret generic postgres-secret \
-  --namespace=evite \
-  --from-literal=POSTGRES_USER="evite" \
-  --from-literal=POSTGRES_PASSWORD="your-strong-password" \
-  --from-literal=POSTGRES_DB="evite"
-
-# Create configmap
-kubectl create configmap evite-config \
-  --namespace=evite \
-  --from-literal=ADMIN_EMAILS="your-email@example.com" \
-  --from-literal=EVENT_DATE="2026-04-19T14:00:00+03:00" \
-  --from-literal=RSVP_DEADLINE="2026-04-12T23:59:59+03:00" \
-  --from-literal=CHURCH_NAME="Biserica Apărătorii Patriei I" \
-  --from-literal=CHURCH_ADDRESS="Your Church Address" \
-  --from-literal=RESTAURANT_NAME="Noor By The Pool" \
-  --from-literal=RESTAURANT_ADDRESS="Your Restaurant Address" \
-  --from-literal=BASE_URL="https://your-actual-domain.com" \
-  --from-literal=GOOGLE_REDIRECT_URL="https://your-actual-domain.com/auth/google/callback" \
-  --from-literal=PORT="8080"
-```
-
-## Configuration Steps
-
-### 1. Update Secrets (if using Option 1 above)
-
-Edit `app-secret.prod.yaml` and replace:
-- `GOOGLE_CLIENT_ID`: Your Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret
-- `SESSION_SECRET`: A random string (generate with `openssl rand -base64 32`)
-
-Edit `postgres-secret.prod.yaml` and replace:
-- `POSTGRES_PASSWORD`: A strong password for production
-
-### 2. Update ConfigMap (if using Option 1 above)
-
-Edit `app-configmap.prod.yaml` and replace:
-- `ADMIN_EMAILS`: Comma-separated list of admin email addresses
-- `BASE_URL`: Your actual domain (e.g., `https://evite.yourdomain.com`)
-- `GOOGLE_REDIRECT_URL`: Your OAuth callback URL
-- `CHURCH_NAME`, `CHURCH_ADDRESS`, `RESTAURANT_NAME`, `RESTAURANT_ADDRESS`: Your event details
-- `EVENT_DATE`, `RSVP_DEADLINE`: Your event dates
-
-### 3. Update Ingress
-
-Edit `ingress.yaml` and replace:
-- `evite.yourdomain.com`: Your actual domain name (appears in 2 places)
-
-### 4. Update Deployment Image
-
-Edit `app-deployment.yaml` and replace:
-- `image: ghcr.io/alextldr/evite:latest`: Your actual Docker image location
-
-## Deployment
-
-### If using Option 1 (production YAML files):
+**For detailed step-by-step instructions, see `DEPLOYMENT-GUIDE.md`**
 
 ```bash
 # 1. Create namespace
 kubectl apply -f k8s/namespace.yaml
 
-# 2. Create secrets (use .prod versions)
-kubectl apply -f k8s/postgres-secret.prod.yaml
-kubectl apply -f k8s/app-secret.prod.yaml
+# 2. Install External Secrets Operator (if not already installed)
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+helm install external-secrets \
+  external-secrets/external-secrets \
+  -n external-secrets-system \
+  --create-namespace \
+  --set installCRDs=true
 
-# 3. Create ConfigMap (use .prod version)
-kubectl apply -f k8s/app-configmap.prod.yaml
+# 3. Create AWS credentials secret
+kubectl create secret generic aws-credentials \
+  --namespace=evite \
+  --from-literal=access-key-id="YOUR_AWS_ACCESS_KEY_ID" \
+  --from-literal=secret-access-key="YOUR_AWS_SECRET_ACCESS_KEY"
 
-# 4. Deploy PostgreSQL
+# 4. Deploy External Secrets
+kubectl apply -f k8s/secretstore.yaml
+kubectl apply -f k8s/externalsecret-app.yaml
+kubectl apply -f k8s/externalsecret-postgres.yaml
+kubectl apply -f k8s/externalsecret-config.yaml
+
+# 5. Deploy PostgreSQL
 kubectl apply -f k8s/postgres-pvc.yaml
 kubectl apply -f k8s/postgres-statefulset.yaml
 kubectl apply -f k8s/postgres-service.yaml
 
-# Wait for PostgreSQL to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n evite --timeout=300s
-
-# 5. Deploy Application
+# 6. Deploy Application
 kubectl apply -f k8s/app-deployment.yaml
 kubectl apply -f k8s/app-service.yaml
-
-# 6. Deploy Ingress
 kubectl apply -f k8s/ingress.yaml
 ```
 

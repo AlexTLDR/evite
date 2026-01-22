@@ -3,7 +3,7 @@ package templates
 script themeScript(lightTheme, darkTheme string) {
 	// Set theme immediately to prevent flash
 	(function() {
-		const darkMode = localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		const darkMode = localStorage.getItem('darkMode') === 'true';
 		document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
 	})();
 }
@@ -12,7 +12,7 @@ script alpineThemeStore(lightTheme, darkTheme string) {
 	// Initialize theme store for Alpine
 	document.addEventListener('alpine:init', () => {
 		Alpine.store('theme', {
-			dark: localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+			dark: localStorage.getItem('darkMode') === 'true',
 			toggle() {
 				this.dark = !this.dark;
 				localStorage.setItem('darkMode', this.dark);

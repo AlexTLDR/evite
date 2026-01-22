@@ -82,13 +82,9 @@
 ### Documentation
 - `k8s/DEPLOYMENT-GUIDE.md` - Step-by-step deployment instructions
 - `k8s/SETUP-SUMMARY.md` - This file
+- `k8s/GITHUB-RUNNER-SETUP.md` - GitHub Actions runner setup guide
 
-### Old Files (KEPT AS REFERENCE ONLY - NOT USED)
-- `k8s/app-secret.yaml` - Template only
-- `k8s/app-configmap.yaml` - Template only
-- `k8s/postgres-secret.yaml` - Template only
-
-### Other Files (STILL USED)
+### Application Manifests
 - `k8s/namespace.yaml` - Creates `evite` namespace
 - `k8s/postgres-pvc.yaml` - PostgreSQL persistent storage
 - `k8s/postgres-statefulset.yaml` - PostgreSQL deployment

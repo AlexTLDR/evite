@@ -135,8 +135,7 @@ jobs:
         run: |
           kubectl apply -f k8s/app-deployment.yaml
           kubectl apply -f k8s/app-service.yaml
-          kubectl apply -f k8s/middleware.yaml
-          kubectl apply -f k8s/ingressroute.yaml
+          kubectl apply -f k8s/ingress.yaml
 
           echo "Waiting for application to be ready..."
           kubectl wait --for=condition=ready pod \
@@ -156,8 +155,9 @@ jobs:
           echo "Services:"
           kubectl get svc -n evite
           echo ""
-          echo "IngressRoutes:"
-          kubectl get ingressroute -n evite
+          echo "Ingress:"
+          kubectl get ingress -n evite
+          kubectl describe ingress evite-ingress -n evite
           echo ""
           echo "Application URL: https://invitatie.dotsat.work"
 

@@ -187,11 +187,16 @@ kubectl apply -f k8s/ingress.yaml
 # Check all resources
 kubectl get all -n evite
 
-# Check logs
+# Check Traefik
+kubectl get pods -n kube-system | grep traefik
+kubectl logs -n kube-system -l app.kubernetes.io/name=traefik
+
+# Check app logs
 kubectl logs -f deployment/evite -n evite
 
 # Check ingress
 kubectl get ingress -n evite
+kubectl describe ingress evite-ingress -n evite
 ```
 
 ---
@@ -199,6 +204,8 @@ kubectl get ingress -n evite
 ## Step 14: Access Your Application
 
 Open your browser and go to: **https://invitatie.dotsat.work**
+
+Traefik will automatically obtain a Let's Encrypt certificate via cert-manager.
 
 ---
 
