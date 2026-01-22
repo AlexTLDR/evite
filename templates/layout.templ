@@ -5,18 +5,143 @@ script themeScript(lightTheme, darkTheme string) {
 	(function() {
 		const darkMode = localStorage.getItem('darkMode') === 'true';
 		document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
+
+		// Check if browser supports OKLCH colors
+		const supportsOKLCH = CSS.supports('color', 'oklch(0% 0 0)');
+
+		if (!supportsOKLCH) {
+			// Apply hex color fallbacks for browsers that don't support OKLCH
+			const root = document.documentElement;
+
+			// Fallback colors for autumn theme
+			const autumnFallbacks = {
+				'--color-base-100': '#F4F4F4',
+				'--color-base-200': '#E3E3E3',
+				'--color-base-300': '#D2D2D2',
+				'--color-base-content': '#313131',
+				'--color-primary': '#980F30',
+				'--color-primary-content': '#E1D5D0',
+				'--color-secondary': '#B8733D',
+				'--color-secondary-content': '#1F1410',
+				'--color-accent': '#D4B86A',
+				'--color-accent-content': '#252015',
+				'--color-neutral': '#8B8577',
+				'--color-neutral-content': '#E8E7E5',
+				'--color-info': '#5BA3D0',
+				'--color-info-content': '#232C31',
+				'--color-success': '#6FAF82',
+				'--color-success-content': '#1F2621',
+				'--color-warning': '#D4A055',
+				'--color-warning-content': '#242016',
+				'--color-error': '#B84D3D',
+				'--color-error-content': '#E8E0DE'
+			};
+
+			// Fallback colors for night theme
+			const nightFallbacks = {
+				'--color-base-100': '#0A1929',
+				'--color-base-200': '#071420',
+				'--color-base-300': '#050F18',
+				'--color-base-content': '#A6ADBB',
+				'--color-primary': '#60A5FA',
+				'--color-primary-content': '#0C1829',
+				'--color-secondary': '#7DD3FC',
+				'--color-secondary-content': '#0D1B29',
+				'--color-accent': '#67E8F9',
+				'--color-accent-content': '#0E1D29',
+				'--color-neutral': '#1E293B',
+				'--color-neutral-content': '#CBD5E1',
+				'--color-info': '#3B82F6',
+				'--color-info-content': '#DBEAFE',
+				'--color-success': '#10B981',
+				'--color-success-content': '#D1FAE5',
+				'--color-warning': '#F59E0B',
+				'--color-warning-content': '#FEF3C7',
+				'--color-error': '#EF4444',
+				'--color-error-content': '#FEE2E2'
+			};
+
+			// Apply the appropriate fallback colors based on current theme
+			const currentTheme = darkMode ? darkTheme : lightTheme;
+			const fallbacks = currentTheme === 'autumn' ? autumnFallbacks : nightFallbacks;
+
+			for (const [property, value] of Object.entries(fallbacks)) {
+				root.style.setProperty(property, value);
+			}
+		}
 	})();
 }
 
 script alpineThemeStore(lightTheme, darkTheme string) {
 	// Initialize theme store for Alpine
 	document.addEventListener('alpine:init', () => {
+		// Helper function to apply OKLCH fallbacks
+		const applyOKLCHFallbacks = (theme) => {
+			const supportsOKLCH = CSS.supports('color', 'oklch(0% 0 0)');
+			if (supportsOKLCH) return; // No fallback needed
+
+			const root = document.documentElement;
+
+			const autumnFallbacks = {
+				'--color-base-100': '#F4F4F4',
+				'--color-base-200': '#E3E3E3',
+				'--color-base-300': '#D2D2D2',
+				'--color-base-content': '#313131',
+				'--color-primary': '#980F30',
+				'--color-primary-content': '#E1D5D0',
+				'--color-secondary': '#B8733D',
+				'--color-secondary-content': '#1F1410',
+				'--color-accent': '#D4B86A',
+				'--color-accent-content': '#252015',
+				'--color-neutral': '#8B8577',
+				'--color-neutral-content': '#E8E7E5',
+				'--color-info': '#5BA3D0',
+				'--color-info-content': '#232C31',
+				'--color-success': '#6FAF82',
+				'--color-success-content': '#1F2621',
+				'--color-warning': '#D4A055',
+				'--color-warning-content': '#242016',
+				'--color-error': '#B84D3D',
+				'--color-error-content': '#E8E0DE'
+			};
+
+			const nightFallbacks = {
+				'--color-base-100': '#0A1929',
+				'--color-base-200': '#071420',
+				'--color-base-300': '#050F18',
+				'--color-base-content': '#A6ADBB',
+				'--color-primary': '#60A5FA',
+				'--color-primary-content': '#0C1829',
+				'--color-secondary': '#7DD3FC',
+				'--color-secondary-content': '#0D1B29',
+				'--color-accent': '#67E8F9',
+				'--color-accent-content': '#0E1D29',
+				'--color-neutral': '#1E293B',
+				'--color-neutral-content': '#CBD5E1',
+				'--color-info': '#3B82F6',
+				'--color-info-content': '#DBEAFE',
+				'--color-success': '#10B981',
+				'--color-success-content': '#D1FAE5',
+				'--color-warning': '#F59E0B',
+				'--color-warning-content': '#FEF3C7',
+				'--color-error': '#EF4444',
+				'--color-error-content': '#FEE2E2'
+			};
+
+			const fallbacks = theme === 'autumn' ? autumnFallbacks : nightFallbacks;
+			for (const [property, value] of Object.entries(fallbacks)) {
+				root.style.setProperty(property, value);
+			}
+		};
+
 		Alpine.store('theme', {
 			dark: localStorage.getItem('darkMode') === 'true',
 			toggle() {
 				this.dark = !this.dark;
 				localStorage.setItem('darkMode', this.dark);
-				document.documentElement.setAttribute('data-theme', this.dark ? darkTheme : lightTheme);
+				const newTheme = this.dark ? darkTheme : lightTheme;
+				document.documentElement.setAttribute('data-theme', newTheme);
+				applyOKLCHFallbacks(newTheme);
 			}
 		});
 
