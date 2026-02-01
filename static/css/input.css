@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @plugin "daisyui" {
+  /* noinspection CssUnknownProperty */
   themes: autumn --default, night --prefersdark;
 }
 
@@ -8,6 +9,14 @@
 @source "../../templates";
 
 /* OKLCH color fallbacks are now handled by JavaScript in layout.templ */
+
+/* Force Samsung Internet to use "Dark Sites" mode for proper OKLCH rendering */
+/* This is a CSS-level backup in case JavaScript doesn't run immediately */
+@supports (-webkit-appearance: none) {
+  :root {
+    color-scheme: light dark;
+  }
+}
 
 /* Make input borders blend with background */
 @layer utilities {

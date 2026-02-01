@@ -4,14 +4,25 @@ script themeScript(lightTheme, darkTheme string) {
 	// Set theme immediately to prevent flash
 	(function() {
 		const darkMode = localStorage.getItem('darkMode') === 'true';
-		document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
+
+		// Detect Samsung Internet Browser specifically
+		const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
+
+		// For Samsung Internet: Force "Dark Sites" mode by setting color-scheme to dark
+		// This triggers Samsung's dark mode conversion which paradoxically fixes OKLCH rendering
+		if (isSamsungBrowser) {
+			// Always use light theme (autumn) for Samsung Internet
+			document.documentElement.setAttribute('data-theme', lightTheme);
+			// Force color-scheme to dark to trigger Samsung's "Dark Sites" feature
+			document.documentElement.style.colorScheme = 'dark';
+		} else {
+			// Normal behavior for other browsers
+			document.documentElement.setAttribute('data-theme', darkMode ? darkTheme : lightTheme);
+		}
 
 		// Check if browser supports OKLCH colors
 		// Samsung Internet Browser may report support but not render correctly
 		const supportsOKLCH = CSS.supports && CSS.supports('color', 'oklch(0% 0 0)');
-
-		// Detect Samsung Internet Browser specifically
-		const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
 
 		// Apply fallbacks if OKLCH is not supported OR if it's Samsung Browser
 		// (Samsung Browser has issues with OKLCH even when it reports support)
@@ -68,7 +79,8 @@ script themeScript(lightTheme, darkTheme string) {
 			};
 
 			// Apply the appropriate fallback colors based on current theme
-			const currentTheme = darkMode ? darkTheme : lightTheme;
+			// For Samsung Internet, always use autumn (light) fallbacks
+			const currentTheme = isSamsungBrowser ? lightTheme : (darkMode ? darkTheme : lightTheme);
 			const fallbacks = currentTheme === 'autumn' ? autumnFallbacks : nightFallbacks;
 
 			for (const [property, value] of Object.entries(fallbacks)) {
@@ -81,10 +93,12 @@ script themeScript(lightTheme, darkTheme string) {
 script alpineThemeStore(lightTheme, darkTheme string) {
 	// Initialize theme store for Alpine
 	document.addEventListener('alpine:init', () => {
+		// Detect Samsung Internet Browser
+		const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
+
 		// Helper function to apply OKLCH fallbacks
 		const applyOKLCHFallbacks = (theme) => {
 			const supportsOKLCH = CSS.supports && CSS.supports('color', 'oklch(0% 0 0)');
-			const isSamsungBrowser = /SamsungBrowser/i.test(navigator.userAgent);
 
 			// Skip fallbacks only if OKLCH is supported AND it's NOT Samsung Browser
 			if (supportsOKLCH && !isSamsungBrowser) return; // No fallback needed
@@ -137,7 +151,8 @@ script alpineThemeStore(lightTheme, darkTheme string) {
 				'--color-error-content': '#FEE2E2'
 			};
 
-			const fallbacks = theme === 'autumn' ? autumnFallbacks : nightFallbacks;
+			// For Samsung Internet, always use autumn (light) fallbacks
+			const fallbacks = isSamsungBrowser ? autumnFallbacks : (theme === 'autumn' ? autumnFallbacks : nightFallbacks);
 			for (const [property, value] of Object.entries(fallbacks)) {
 				root.style.setProperty(property, value);
 			}
@@ -146,6 +161,13 @@ script alpineThemeStore(lightTheme, darkTheme string) {
 		Alpine.store('theme', {
 			dark: localStorage.getItem('darkMode') === 'true',
 			toggle() {
+				// For Samsung Internet: Disable theme toggle and keep "Dark Sites" mode active
+				if (isSamsungBrowser) {
+					// Do nothing - Samsung Internet stays locked to light theme with dark color-scheme
+					return;
+				}
+
+				// Normal behavior for other browsers
 				this.dark = !this.dark;
 				localStorage.setItem('darkMode', this.dark);
 				const newTheme = this.dark ? darkTheme : lightTheme;
