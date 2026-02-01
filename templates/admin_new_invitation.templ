@@ -1,6 +1,6 @@
 package templates
 
-templ AdminNewInvitation(userName string, errorMsg string, lightTheme string, darkTheme string) {
+templ AdminNewInvitation(userName string, errorMsg string, lightTheme string, darkTheme string, csrfToken string) {
 	@AdminLayout("Invitație Nouă - Evite Admin", "ro", userName, lightTheme, darkTheme) {
 		<div class="page-header">
 			<h2>Invitație Nouă</h2>
@@ -12,6 +12,8 @@ templ AdminNewInvitation(userName string, errorMsg string, lightTheme string, da
 			</div>
 		}
 		<form method="POST" action="/admin/invitations/create" class="invitation-form">
+			<!-- CSRF Token -->
+			<input type="hidden" name="csrf_token" value={ csrfToken }/>
 			<div class="form-group">
 				<label for="guest_name">Nume Invitat *</label>
 				<input 

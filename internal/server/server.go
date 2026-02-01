@@ -2,10 +2,14 @@ package server
 
 import (
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
+	"github.com/AlexTLDR/evite/internal/middleware"
 	"github.com/AlexTLDR/evite/internal/server/handlers"
+	"github.com/AlexTLDR/evite/internal/utils"
 	"github.com/gorilla/sessions"
 )
 
@@ -28,10 +32,20 @@ func (s *Server) GetConfig() *config.Config {
 
 // GetCurrentUser implements handlers.AdminServer interface
 func (s *Server) GetCurrentUser(r *http.Request) (string, string) {
-	session, _ := s.sessionStore.Get(r, "auth-session")
+	session, err := s.sessionStore.Get(r, "auth-session")
+	if err != nil {
+		// Log the error but don't expose it to the user
+		// Session errors can happen due to tampering or expired cookies
+		return "", ""
+	}
 	email, _ := session.Values["email"].(string)
 	name, _ := session.Values["name"].(string)
 	return email, name
+}
+
+// GetSessionStore returns the session store for CSRF token retrieval
+func (s *Server) GetSessionStore() *sessions.CookieStore {
+	return s.sessionStore
 }
 
 func New(cfg *config.Config, db *database.DB) *Server {
@@ -47,32 +61,105 @@ func New(cfg *config.Config, db *database.DB) *Server {
 }
 
 func (s *Server) setupRoutes() {
-	// Static files
+	// Static files (no middleware needed)
 	fs := http.FileServer(http.Dir("./static"))
 	s.router.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Public routes
-	s.router.HandleFunc("/", handlers.HandleHome(s))
-	s.router.HandleFunc("/rsvp/", handlers.HandleRSVP(s))
-	s.router.HandleFunc("/rsvp/submit", handlers.HandleRSVPSubmit(s))
+	// Get trust proxy setting from config
+	trustProxy := s.config.TrustProxy
 
-	// Auth routes
-	s.router.HandleFunc("/auth/google", s.handleGoogleLogin)
-	s.router.HandleFunc("/auth/google/callback", s.handleGoogleCallback)
-	s.router.HandleFunc("/auth/logout", s.handleLogout)
+	// Create CSRF protection middleware (exclude OAuth callback)
+	csrfProtection := middleware.CSRFProtection(s.sessionStore, "/auth/google/callback")
 
-	// Admin routes (protected)
-	s.router.HandleFunc("/admin", s.requireAuth(handlers.HandleAdminDashboard(s)))
-	s.router.HandleFunc("/admin/invitations", s.requireAuth(handlers.HandleAdminInvitations(s)))
-	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(handlers.HandleAdminNewInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(handlers.HandleAdminCreateInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(handlers.HandleAdminEditInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(handlers.HandleAdminUpdateInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(handlers.HandleAdminDeleteInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(handlers.HandleAdminMarkSent(s)))
-	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(handlers.HandleAdminDownloadCSV(s)))
+	// Create timeout middleware (30 seconds for most requests)
+	requestTimeout := middleware.Timeout(30 * time.Second)
+
+	// General page rate limiting (200 requests per hour per IP)
+	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour, trustProxy)
+
+	// Combine security headers, timeout, panic recovery, and page rate limiting for public routes
+	// Note: CSRF protection is added to generate tokens for forms
+	publicMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		pageRateLimit,
+	)
+
+	// Public routes with full middleware stack
+	s.router.HandleFunc("/", publicMiddleware(handlers.HandleHome(s)))
+	s.router.HandleFunc("/rsvp/", publicMiddleware(handlers.HandleRSVP(s)))
+
+	// RSVP submit with CSRF protection
+	// - 15 requests per IP per 15 minutes
+	// - 15 requests per phone number per 15 minutes
+	rsvpRateLimit := middleware.CombinedRateLimit(
+		middleware.RateLimitByIP(15, 15*time.Minute, trustProxy),
+		middleware.RateLimitByKey(15, 15*time.Minute, trustProxy, s.extractPhoneFromRequest),
+	)
+	rsvpMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		rsvpRateLimit,
+	)
+	s.router.HandleFunc("/rsvp/submit", rsvpMiddleware(handlers.HandleRSVPSubmit(s)))
+
+	// Auth routes with security headers and rate limiting (10 requests per IP per 5 minutes)
+	// Note: OAuth callback is excluded from CSRF protection
+	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute, trustProxy)
+	authMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		authRateLimit,
+	)
+	s.router.HandleFunc("/auth/google", authMiddleware(s.handleGoogleLogin))
+	s.router.HandleFunc("/auth/google/callback", authMiddleware(s.handleGoogleCallback))
+	s.router.HandleFunc("/auth/logout", middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+	)(s.handleLogout))
+
+	// Admin routes (protected) with CSRF protection and rate limiting (30 requests per IP per minute)
+	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute, trustProxy)
+	adminMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		adminRateLimit,
+	)
+
+	// Admin POST routes with CSRF protection
+	adminPostMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		adminRateLimit,
+	)
+
+	// Apply middleware to admin routes
+	s.router.HandleFunc("/admin", s.requireAuth(adminMiddleware(handlers.HandleAdminDashboard(s))))
+	s.router.HandleFunc("/admin/invitations", s.requireAuth(adminMiddleware(handlers.HandleAdminInvitations(s))))
+	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(adminMiddleware(handlers.HandleAdminNewInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminPostMiddleware(handlers.HandleAdminCreateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(adminMiddleware(handlers.HandleAdminEditInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminPostMiddleware(handlers.HandleAdminUpdateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminPostMiddleware(handlers.HandleAdminDeleteInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminPostMiddleware(handlers.HandleAdminMarkSent(s))))
+	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(adminMiddleware(handlers.HandleAdminDownloadCSV(s))))
 }
 
+// Handler returns the HTTP handler for the server
+func (s *Server) Handler() http.Handler {
+	return s.router
+}
+
+// Start starts the HTTP server (deprecated: use Handler() with http.Server for graceful shutdown)
 func (s *Server) Start(addr string) error {
 	return http.ListenAndServe(addr, s.router)
 }
@@ -80,7 +167,13 @@ func (s *Server) Start(addr string) error {
 // requireAuth is a middleware that checks if user is authenticated
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, _ := s.sessionStore.Get(r, "auth-session")
+		session, err := s.sessionStore.Get(r, "auth-session")
+		if err != nil {
+			// Session error (tampered cookie, decryption failure, etc.)
+			// Redirect to login to get a fresh session
+			http.Redirect(w, r, "/auth/google", http.StatusSeeOther)
+			return
+		}
 
 		email, ok := session.Values["email"].(string)
 		if !ok || email == "" {
@@ -105,4 +198,30 @@ func (s *Server) isAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+// extractPhoneFromRequest extracts and normalizes the phone number from the request for rate limiting
+func (s *Server) extractPhoneFromRequest(r *http.Request) string {
+	// Parse form if not already parsed
+	if err := r.ParseForm(); err != nil {
+		return ""
+	}
+
+	// Get phone from form
+	phone := strings.TrimSpace(r.FormValue("phone"))
+	if phone == "" {
+		return ""
+	}
+
+	// Normalize phone number to prevent rate limit bypass
+	// This ensures "+40721234567", "0721234567", "0721 234 567", etc. all map to the same key
+	// If normalization fails, use the original phone (better than no rate limiting)
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		// If normalization fails, return original phone for rate limiting
+		// This prevents bypassing rate limits with invalid phone numbers
+		return phone
+	}
+
+	return normalizedPhone
 }

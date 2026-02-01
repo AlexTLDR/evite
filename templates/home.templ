@@ -6,7 +6,7 @@ import (
 	"github.com/AlexTLDR/evite/internal/database"
 )
 
-templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation, deadlinePassed bool, deadlineText string) {
+templ Home(lang string, lightTheme string, darkTheme string, invitation *database.Invitation, deadlinePassed bool, deadlineText string, csrfToken string) {
 	@PublicLayout("Evite - Invitație Botez", lang, lightTheme, darkTheme) {
 		<div class="landing-page mx-auto" x-data="{ get isDark() { return $store.theme?.dark || false } }">
 			<!-- Wrapper for card and decorations -->
@@ -332,9 +332,9 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						class="rsvp-form-container mt-8 w-full mx-auto"
 						x-show="$store.rsvp.show"
 						x-cloak
-						x-transition:enter="transition ease-out duration-300"
-						x-transition:enter-start="opacity-0 transform translate-y-4"
-						x-transition:enter-end="opacity-100 transform translate-y-0"
+						x-transition:enter={ "transition ease-out duration-300" }
+						x-transition:enter-start={ "opacity-0 transform translate-y-4" }
+						x-transition:enter-end={ "opacity-100 transform translate-y-0" }
 					>
 						<!-- Success Message (shown after submission) -->
 						<div x-show="$store.rsvp.submitted" x-cloak class="bg-success text-success-content rounded-lg shadow-xl p-8 text-center">
@@ -396,6 +396,8 @@ templ Home(lang string, lightTheme string, darkTheme string, invitation *databas
 						if invitation != nil {
 							<input type="hidden" name="token" value={ invitation.Token }/>
 						}
+						<!-- CSRF Token -->
+						<input type="hidden" name="csrf_token" value={ csrfToken }/>
 
 						<!-- Title -->
 						<h3 class="text-center text-lg font-semibold mb-6">
