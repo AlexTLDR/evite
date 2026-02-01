@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,6 +16,7 @@ type RateLimiter struct {
 	rate     int           // requests allowed
 	window   time.Duration // time window
 	cleanup  time.Duration // cleanup interval
+	done     chan struct{} // for graceful shutdown
 }
 
 // bucket represents a token bucket for a specific key
@@ -32,6 +35,7 @@ func NewRateLimiter(rate int, window time.Duration) *RateLimiter {
 		rate:     rate,
 		window:   window,
 		cleanup:  window * 2, // cleanup old entries periodically
+		done:     make(chan struct{}),
 	}
 
 	// Start cleanup goroutine
@@ -42,19 +46,18 @@ func NewRateLimiter(rate int, window time.Duration) *RateLimiter {
 
 // Allow checks if a request should be allowed for the given key
 func (rl *RateLimiter) Allow(key string) bool {
-	rl.mu.RLock()
+	rl.mu.Lock()
 	b, exists := rl.limiters[key]
-	rl.mu.RUnlock()
-
 	if !exists {
 		b = &bucket{
-			tokens:    rl.rate,
+			tokens:    rl.rate - 1, // Consume token immediately
 			lastReset: time.Now(),
 		}
-		rl.mu.Lock()
 		rl.limiters[key] = b
 		rl.mu.Unlock()
+		return true
 	}
+	rl.mu.Unlock()
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -79,18 +82,28 @@ func (rl *RateLimiter) cleanupLoop() {
 	ticker := time.NewTicker(rl.cleanup)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		rl.mu.Lock()
-		now := time.Now()
-		for key, b := range rl.limiters {
-			b.mu.Lock()
-			if now.Sub(b.lastReset) > rl.cleanup {
-				delete(rl.limiters, key)
+	for {
+		select {
+		case <-ticker.C:
+			rl.mu.Lock()
+			now := time.Now()
+			for key, b := range rl.limiters {
+				b.mu.Lock()
+				if now.Sub(b.lastReset) > rl.cleanup {
+					delete(rl.limiters, key)
+				}
+				b.mu.Unlock()
 			}
-			b.mu.Unlock()
+			rl.mu.Unlock()
+		case <-rl.done:
+			return
 		}
-		rl.mu.Unlock()
 	}
+}
+
+// Stop gracefully stops the rate limiter cleanup goroutine
+func (rl *RateLimiter) Stop() {
+	close(rl.done)
 }
 
 // getClientIP extracts the real client IP from the request
@@ -98,10 +111,10 @@ func getClientIP(r *http.Request) string {
 	// Check X-Forwarded-For header (for proxies/load balancers)
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		// X-Forwarded-For can contain multiple IPs, take the first one
-		if ip, _, err := net.SplitHostPort(xff); err == nil {
-			return ip
+		if idx := strings.Index(xff, ","); idx != -1 {
+			return strings.TrimSpace(xff[:idx])
 		}
-		return xff
+		return strings.TrimSpace(xff)
 	}
 
 	// Check X-Real-IP header
@@ -126,6 +139,7 @@ func RateLimitByIP(rate int, window time.Duration) func(http.HandlerFunc) http.H
 			ip := getClientIP(r)
 
 			if !limiter.Allow(ip) {
+				w.Header().Set("Retry-After", fmt.Sprintf("%.0f", window.Seconds()))
 				http.Error(w, "Rate limit exceeded. Please try again later.", http.StatusTooManyRequests)
 				return
 			}
@@ -148,6 +162,7 @@ func RateLimitByKey(rate int, window time.Duration, keyFunc func(*http.Request) 
 			}
 
 			if !limiter.Allow(key) {
+				w.Header().Set("Retry-After", fmt.Sprintf("%.0f", window.Seconds()))
 				http.Error(w, "Rate limit exceeded. Please try again later.", http.StatusTooManyRequests)
 				return
 			}
