@@ -8,13 +8,16 @@ import (
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/i18n"
+	"github.com/AlexTLDR/evite/internal/middleware"
 	"github.com/AlexTLDR/evite/templates"
+	"github.com/gorilla/sessions"
 )
 
 // Server interface defines the methods needed by handlers
 type Server interface {
 	GetDB() *database.DB
 	GetConfig() *config.Config
+	GetSessionStore() *sessions.CookieStore
 }
 
 // homePageData holds all data needed to render the home page
@@ -105,8 +108,9 @@ func prepareHomePageData(s Server, r *http.Request) homePageData {
 func HandleHome(s Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := prepareHomePageData(s, r)
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
 
-		if err := templates.Home(data.lang, data.lightTheme, data.darkTheme, data.invitation, data.deadlinePassed, data.deadlineText).Render(r.Context(), w); err != nil {
+		if err := templates.Home(data.lang, data.lightTheme, data.darkTheme, data.invitation, data.deadlinePassed, data.deadlineText, csrfToken).Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
 		}
 	}

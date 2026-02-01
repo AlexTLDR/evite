@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse, lightTheme string, darkTheme string) {
+templ AdminInvitationsList(userName string, invitations []*database.InvitationWithResponse, lightTheme string, darkTheme string, csrfToken string) {
 	@AdminLayout("Invitații - Evite Admin", "ro", userName, lightTheme, darkTheme) {
 		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 			<h2 class="text-2xl sm:text-3xl font-bold">Lista Invitații</h2>
@@ -190,6 +190,7 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 									<!-- Mark as sent button -->
 									if !inv.SentAt.Valid {
 										<form method="POST" action="/admin/invitations/mark-sent" class="inline">
+											<input type="hidden" name="csrf_token" value={ csrfToken }/>
 											<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
 											<button type="submit" class="btn btn-xs sm:btn-sm btn-primary" title="Marchează ca trimis">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">
@@ -208,6 +209,7 @@ templ AdminInvitationsList(userName string, invitations []*database.InvitationWi
 									</a>
 									<!-- Delete button -->
 									<form method="POST" action="/admin/invitations/delete" class="inline" onsubmit="return confirm('Sigur vrei să ștergi această invitație?')">
+										<input type="hidden" name="csrf_token" value={ csrfToken }/>
 										<input type="hidden" name="id" value={ fmt.Sprintf("%d", inv.ID) }/>
 										<button type="submit" class="btn btn-xs sm:btn-sm btn-error" title="Șterge">
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 sm:w-4 sm:h-4">

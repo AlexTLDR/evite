@@ -43,6 +43,11 @@ func (s *Server) GetCurrentUser(r *http.Request) (string, string) {
 	return email, name
 }
 
+// GetSessionStore returns the session store for CSRF token retrieval
+func (s *Server) GetSessionStore() *sessions.CookieStore {
+	return s.sessionStore
+}
+
 func New(cfg *config.Config, db *database.DB) *Server {
 	s := &Server{
 		config:       cfg,
@@ -56,54 +61,96 @@ func New(cfg *config.Config, db *database.DB) *Server {
 }
 
 func (s *Server) setupRoutes() {
-	// Static files
+	// Static files (no middleware needed)
 	fs := http.FileServer(http.Dir("./static"))
 	s.router.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Get trust proxy setting from config
 	trustProxy := s.config.TrustProxy
 
+	// Create CSRF protection middleware (exclude OAuth callback)
+	csrfProtection := middleware.CSRFProtection(s.sessionStore, "/auth/google/callback")
+
+	// Create timeout middleware (30 seconds for most requests)
+	requestTimeout := middleware.Timeout(30 * time.Second)
+
 	// General page rate limiting (200 requests per hour per IP)
 	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour, trustProxy)
 
-	// Combine panic recovery with page rate limiting for public routes
-	publicMiddleware := middleware.Chain(middleware.PanicRecovery, pageRateLimit)
+	// Combine security headers, timeout, panic recovery, and page rate limiting for public routes
+	// Note: CSRF protection is added to generate tokens for forms
+	publicMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		pageRateLimit,
+	)
 
-	// Public routes with panic recovery and rate limiting
+	// Public routes with full middleware stack
 	s.router.HandleFunc("/", publicMiddleware(handlers.HandleHome(s)))
 	s.router.HandleFunc("/rsvp/", publicMiddleware(handlers.HandleRSVP(s)))
 
-	// RSVP submit with panic recovery and rate limiting
+	// RSVP submit with CSRF protection
 	// - 15 requests per IP per 15 minutes
 	// - 15 requests per phone number per 15 minutes
 	rsvpRateLimit := middleware.CombinedRateLimit(
 		middleware.RateLimitByIP(15, 15*time.Minute, trustProxy),
 		middleware.RateLimitByKey(15, 15*time.Minute, trustProxy, s.extractPhoneFromRequest),
 	)
-	rsvpMiddleware := middleware.Chain(middleware.PanicRecovery, rsvpRateLimit)
+	rsvpMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		rsvpRateLimit,
+	)
 	s.router.HandleFunc("/rsvp/submit", rsvpMiddleware(handlers.HandleRSVPSubmit(s)))
 
-	// Auth routes with panic recovery and rate limiting (10 requests per IP per 5 minutes)
+	// Auth routes with security headers and rate limiting (10 requests per IP per 5 minutes)
+	// Note: OAuth callback is excluded from CSRF protection
 	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute, trustProxy)
-	authMiddleware := middleware.Chain(middleware.PanicRecovery, authRateLimit)
+	authMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		authRateLimit,
+	)
 	s.router.HandleFunc("/auth/google", authMiddleware(s.handleGoogleLogin))
 	s.router.HandleFunc("/auth/google/callback", authMiddleware(s.handleGoogleCallback))
-	s.router.HandleFunc("/auth/logout", middleware.PanicRecovery(s.handleLogout))
+	s.router.HandleFunc("/auth/logout", middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+	)(s.handleLogout))
 
-	// Admin routes (protected) with panic recovery and rate limiting (30 requests per IP per minute)
+	// Admin routes (protected) with CSRF protection and rate limiting (30 requests per IP per minute)
 	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute, trustProxy)
-	adminMiddleware := middleware.Chain(middleware.PanicRecovery, adminRateLimit)
+	adminMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		adminRateLimit,
+	)
 
-	// Apply adminMiddleware consistently to all admin routes
-	// Note: adminMiddleware already includes PanicRecovery, so we don't wrap it again
+	// Admin POST routes with CSRF protection
+	adminPostMiddleware := middleware.Chain(
+		middleware.SecurityHeaders,
+		requestTimeout,
+		middleware.PanicRecovery,
+		csrfProtection,
+		adminRateLimit,
+	)
+
+	// Apply middleware to admin routes
 	s.router.HandleFunc("/admin", s.requireAuth(adminMiddleware(handlers.HandleAdminDashboard(s))))
 	s.router.HandleFunc("/admin/invitations", s.requireAuth(adminMiddleware(handlers.HandleAdminInvitations(s))))
 	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(adminMiddleware(handlers.HandleAdminNewInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminMiddleware(handlers.HandleAdminCreateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminPostMiddleware(handlers.HandleAdminCreateInvitation(s))))
 	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(adminMiddleware(handlers.HandleAdminEditInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminMiddleware(handlers.HandleAdminUpdateInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminMiddleware(handlers.HandleAdminDeleteInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminMiddleware(handlers.HandleAdminMarkSent(s))))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminPostMiddleware(handlers.HandleAdminUpdateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminPostMiddleware(handlers.HandleAdminDeleteInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminPostMiddleware(handlers.HandleAdminMarkSent(s))))
 	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(adminMiddleware(handlers.HandleAdminDownloadCSV(s))))
 }
 

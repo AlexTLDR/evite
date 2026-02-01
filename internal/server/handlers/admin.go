@@ -8,6 +8,7 @@ import (
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/i18n"
+	"github.com/AlexTLDR/evite/internal/middleware"
 	"github.com/AlexTLDR/evite/internal/utils"
 	"github.com/AlexTLDR/evite/templates"
 )
@@ -89,7 +90,8 @@ func HandleAdminInvitations(s AdminServer) http.HandlerFunc {
 		}
 
 		themes := config.GetThemes()
-		if err := templates.AdminInvitationsList(userName, invitations, themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
+		if err := templates.AdminInvitationsList(userName, invitations, themes.Light, themes.Dark, csrfToken).Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
 		}
 	}
@@ -100,7 +102,8 @@ func HandleAdminNewInvitation(s AdminServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, userName := s.GetCurrentUser(r)
 		themes := config.GetThemes()
-		if err := templates.AdminNewInvitation(userName, "", themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
+		if err := templates.AdminNewInvitation(userName, "", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
 		}
 	}
@@ -113,9 +116,9 @@ type invitationFormData struct {
 }
 
 // parseInvitationForm parses and validates the invitation form
-func parseInvitationForm(r *http.Request, w http.ResponseWriter, userName string, themes config.ThemeConfig) (*invitationFormData, bool) {
+func parseInvitationForm(r *http.Request, w http.ResponseWriter, userName string, themes config.ThemeConfig, csrfToken string) (*invitationFormData, bool) {
 	if err := r.ParseForm(); err != nil {
-		_ = templates.AdminNewInvitation(userName, "Eroare la procesarea formularului", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Eroare la procesarea formularului", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 		return nil, false
 	}
 
@@ -124,14 +127,14 @@ func parseInvitationForm(r *http.Request, w http.ResponseWriter, userName string
 
 	// Validate required fields
 	if guestName == "" || phone == "" {
-		_ = templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 		return nil, false
 	}
 
 	// Normalize phone number to E.164 format
 	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
 	if err != nil {
-		_ = templates.AdminNewInvitation(userName, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Număr de telefon invalid", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 		return nil, false
 	}
 
@@ -147,20 +150,20 @@ func createInvitationRecord(s Server, formData *invitationFormData, messageTempl
 }
 
 // handleInvitationCreationError renders an error message for invitation creation failures
-func handleInvitationCreationError(err error, w http.ResponseWriter, r *http.Request, userName string, themes config.ThemeConfig) {
+func handleInvitationCreationError(err error, w http.ResponseWriter, r *http.Request, userName string, themes config.ThemeConfig, csrfToken string) {
 	if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-		_ = templates.AdminNewInvitation(userName, "Acest număr de telefon există deja", themes.Light, themes.Dark).Render(r.Context(), w)
+		_ = templates.AdminNewInvitation(userName, "Acest număr de telefon există deja", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 		return
 	}
-	_ = templates.AdminNewInvitation(userName, "Eroare la crearea invitației", themes.Light, themes.Dark).Render(r.Context(), w)
+	_ = templates.AdminNewInvitation(userName, "Eroare la crearea invitației", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 }
 
 // createInvitationWithMessage creates an invitation and updates its message with the token
-func createInvitationWithMessage(s Server, formData *invitationFormData, messageTemplate string, w http.ResponseWriter, r *http.Request, userName string, themes config.ThemeConfig) bool {
+func createInvitationWithMessage(s Server, formData *invitationFormData, messageTemplate string, w http.ResponseWriter, r *http.Request, userName string, themes config.ThemeConfig, csrfToken string) bool {
 	// Create invitation (this will generate the token)
 	inv, err := createInvitationRecord(s, formData, messageTemplate)
 	if err != nil {
-		handleInvitationCreationError(err, w, r, userName, themes)
+		handleInvitationCreationError(err, w, r, userName, themes, csrfToken)
 		return false
 	}
 
@@ -207,9 +210,10 @@ func HandleAdminCreateInvitation(s AdminServer) http.HandlerFunc {
 
 		_, userName := s.GetCurrentUser(r)
 		themes := config.GetThemes()
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
 
 		// Parse and validate form
-		formData, ok := parseInvitationForm(r, w, userName, themes)
+		formData, ok := parseInvitationForm(r, w, userName, themes, csrfToken)
 		if !ok {
 			return
 		}
@@ -219,7 +223,7 @@ func HandleAdminCreateInvitation(s AdminServer) http.HandlerFunc {
 		inviteMessageTemplate := generateInviteMessageTemplate(s, formData.guestName, lang)
 
 		// Create invitation and update message
-		if !createInvitationWithMessage(s, formData, inviteMessageTemplate, w, r, userName, themes) {
+		if !createInvitationWithMessage(s, formData, inviteMessageTemplate, w, r, userName, themes, csrfToken) {
 			return
 		}
 
@@ -250,6 +254,7 @@ func HandleAdminEditInvitation(s AdminServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, userName := s.GetCurrentUser(r)
 		themes := config.GetThemes()
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
 
 		// Extract ID from URL path
 		idStr := r.URL.Path[len("/admin/invitations/edit/"):]
@@ -265,7 +270,7 @@ func HandleAdminEditInvitation(s AdminServer) http.HandlerFunc {
 			return
 		}
 
-		if err := templates.AdminEditInvitation(userName, invitation, "", themes.Light, themes.Dark).Render(r.Context(), w); err != nil {
+		if err := templates.AdminEditInvitation(userName, invitation, "", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w); err != nil {
 			http.Error(w, "Failed to render page", http.StatusInternalServerError)
 		}
 	}
@@ -281,6 +286,7 @@ func HandleAdminUpdateInvitation(s AdminServer) http.HandlerFunc {
 
 		_, userName := s.GetCurrentUser(r)
 		themes := config.GetThemes()
+		csrfToken := middleware.GetCSRFToken(r, s.GetSessionStore())
 
 		// Extract ID from URL path
 		idStr := r.URL.Path[len("/admin/invitations/update/"):]
@@ -300,7 +306,7 @@ func HandleAdminUpdateInvitation(s AdminServer) http.HandlerFunc {
 
 		if guestName == "" || phone == "" {
 			invitation, _ := s.GetDB().GetInvitationByID(id)
-			_ = templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark).Render(r.Context(), w)
+			_ = templates.AdminEditInvitation(userName, invitation, "Toate câmpurile sunt obligatorii", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 			return
 		}
 
@@ -308,14 +314,14 @@ func HandleAdminUpdateInvitation(s AdminServer) http.HandlerFunc {
 		normalizedPhone, err := utils.NormalizePhoneNumber(phone)
 		if err != nil {
 			invitation, _ := s.GetDB().GetInvitationByID(id)
-			_ = templates.AdminEditInvitation(userName, invitation, "Număr de telefon invalid", themes.Light, themes.Dark).Render(r.Context(), w)
+			_ = templates.AdminEditInvitation(userName, invitation, "Număr de telefon invalid", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 			return
 		}
 		phone = normalizedPhone
 
 		if err := s.GetDB().UpdateInvitation(id, guestName, phone); err != nil {
 			invitation, _ := s.GetDB().GetInvitationByID(id)
-			_ = templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.", themes.Light, themes.Dark).Render(r.Context(), w)
+			_ = templates.AdminEditInvitation(userName, invitation, "Eroare la actualizare. Verifică dacă numărul de telefon nu este deja folosit.", themes.Light, themes.Dark, csrfToken).Render(r.Context(), w)
 			return
 		}
 
