@@ -57,36 +57,43 @@ func (s *Server) setupRoutes() {
 	// General page rate limiting (200 requests per hour per IP)
 	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour)
 
-	// Public routes with page rate limiting
-	s.router.HandleFunc("/", pageRateLimit(handlers.HandleHome(s)))
-	s.router.HandleFunc("/rsvp/", pageRateLimit(handlers.HandleRSVP(s)))
+	// Combine panic recovery with page rate limiting for public routes
+	publicMiddleware := middleware.Chain(middleware.PanicRecovery, pageRateLimit)
 
-	// RSVP submit with rate limiting
+	// Public routes with panic recovery and rate limiting
+	s.router.HandleFunc("/", publicMiddleware(handlers.HandleHome(s)))
+	s.router.HandleFunc("/rsvp/", publicMiddleware(handlers.HandleRSVP(s)))
+
+	// RSVP submit with panic recovery and rate limiting
 	// - 15 requests per IP per 15 minutes
 	// - 15 requests per phone number per 15 minutes
 	rsvpRateLimit := middleware.CombinedRateLimit(
 		middleware.RateLimitByIP(15, 15*time.Minute),
 		middleware.RateLimitByKey(15, 15*time.Minute, s.extractPhoneFromRequest),
 	)
-	s.router.HandleFunc("/rsvp/submit", rsvpRateLimit(handlers.HandleRSVPSubmit(s)))
+	rsvpMiddleware := middleware.Chain(middleware.PanicRecovery, rsvpRateLimit)
+	s.router.HandleFunc("/rsvp/submit", rsvpMiddleware(handlers.HandleRSVPSubmit(s)))
 
-	// Auth routes with rate limiting (10 requests per IP per 5 minutes)
+	// Auth routes with panic recovery and rate limiting (10 requests per IP per 5 minutes)
 	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute)
-	s.router.HandleFunc("/auth/google", authRateLimit(s.handleGoogleLogin))
-	s.router.HandleFunc("/auth/google/callback", authRateLimit(s.handleGoogleCallback))
-	s.router.HandleFunc("/auth/logout", s.handleLogout)
+	authMiddleware := middleware.Chain(middleware.PanicRecovery, authRateLimit)
+	s.router.HandleFunc("/auth/google", authMiddleware(s.handleGoogleLogin))
+	s.router.HandleFunc("/auth/google/callback", authMiddleware(s.handleGoogleCallback))
+	s.router.HandleFunc("/auth/logout", middleware.PanicRecovery(s.handleLogout))
 
-	// Admin routes (protected) with rate limiting (30 requests per IP per minute)
+	// Admin routes (protected) with panic recovery and rate limiting (30 requests per IP per minute)
 	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute)
-	s.router.HandleFunc("/admin", s.requireAuth(handlers.HandleAdminDashboard(s)))
-	s.router.HandleFunc("/admin/invitations", s.requireAuth(handlers.HandleAdminInvitations(s)))
-	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(handlers.HandleAdminNewInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminRateLimit(handlers.HandleAdminCreateInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(handlers.HandleAdminEditInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminRateLimit(handlers.HandleAdminUpdateInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminRateLimit(handlers.HandleAdminDeleteInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminRateLimit(handlers.HandleAdminMarkSent(s))))
-	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(handlers.HandleAdminDownloadCSV(s)))
+	adminMiddleware := middleware.Chain(middleware.PanicRecovery, adminRateLimit)
+
+	s.router.HandleFunc("/admin", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminDashboard(s))))
+	s.router.HandleFunc("/admin/invitations", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminInvitations(s))))
+	s.router.HandleFunc("/admin/invitations/new", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminNewInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/create", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminCreateInvitation(s)))))
+	s.router.HandleFunc("/admin/invitations/edit/", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminEditInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/update/", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminUpdateInvitation(s)))))
+	s.router.HandleFunc("/admin/invitations/delete", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminDeleteInvitation(s)))))
+	s.router.HandleFunc("/admin/invitations/mark-sent", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminMarkSent(s)))))
+	s.router.HandleFunc("/admin/invitations/download-csv", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminDownloadCSV(s))))
 }
 
 func (s *Server) Start(addr string) error {

@@ -41,7 +41,8 @@ tasks:
     desc: Build the application
     deps: [templ, css]
     cmds:
-      - go build -o {{.BINARY_NAME}} {{.MAIN_PATH}}
+      - mkdir -p bin
+      - go build -o bin/{{.BINARY_NAME}} {{.MAIN_PATH}}
 
   run:
     desc: Run the application (rebuilds templ and CSS first)
@@ -89,7 +90,9 @@ tasks:
     desc: Clean build artifacts
     cmds:
       - rm -f {{.BINARY_NAME}}
+      - rm -rf bin
       - rm -f coverage.out coverage.html
+      - rm -f evite.db
 
   migrate-up:
     desc: Run migrations up
