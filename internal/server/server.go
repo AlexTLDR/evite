@@ -9,6 +9,7 @@ import (
 	"github.com/AlexTLDR/evite/internal/database"
 	"github.com/AlexTLDR/evite/internal/middleware"
 	"github.com/AlexTLDR/evite/internal/server/handlers"
+	"github.com/AlexTLDR/evite/internal/utils"
 	"github.com/gorilla/sessions"
 )
 
@@ -31,7 +32,12 @@ func (s *Server) GetConfig() *config.Config {
 
 // GetCurrentUser implements handlers.AdminServer interface
 func (s *Server) GetCurrentUser(r *http.Request) (string, string) {
-	session, _ := s.sessionStore.Get(r, "auth-session")
+	session, err := s.sessionStore.Get(r, "auth-session")
+	if err != nil {
+		// Log the error but don't expose it to the user
+		// Session errors can happen due to tampering or expired cookies
+		return "", ""
+	}
 	email, _ := session.Values["email"].(string)
 	name, _ := session.Values["name"].(string)
 	return email, name
@@ -54,8 +60,11 @@ func (s *Server) setupRoutes() {
 	fs := http.FileServer(http.Dir("./static"))
 	s.router.Handle("/static/", http.StripPrefix("/static/", fs))
 
+	// Get trust proxy setting from config
+	trustProxy := s.config.TrustProxy
+
 	// General page rate limiting (200 requests per hour per IP)
-	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour)
+	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour, trustProxy)
 
 	// Combine panic recovery with page rate limiting for public routes
 	publicMiddleware := middleware.Chain(middleware.PanicRecovery, pageRateLimit)
@@ -68,34 +77,42 @@ func (s *Server) setupRoutes() {
 	// - 15 requests per IP per 15 minutes
 	// - 15 requests per phone number per 15 minutes
 	rsvpRateLimit := middleware.CombinedRateLimit(
-		middleware.RateLimitByIP(15, 15*time.Minute),
-		middleware.RateLimitByKey(15, 15*time.Minute, s.extractPhoneFromRequest),
+		middleware.RateLimitByIP(15, 15*time.Minute, trustProxy),
+		middleware.RateLimitByKey(15, 15*time.Minute, trustProxy, s.extractPhoneFromRequest),
 	)
 	rsvpMiddleware := middleware.Chain(middleware.PanicRecovery, rsvpRateLimit)
 	s.router.HandleFunc("/rsvp/submit", rsvpMiddleware(handlers.HandleRSVPSubmit(s)))
 
 	// Auth routes with panic recovery and rate limiting (10 requests per IP per 5 minutes)
-	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute)
+	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute, trustProxy)
 	authMiddleware := middleware.Chain(middleware.PanicRecovery, authRateLimit)
 	s.router.HandleFunc("/auth/google", authMiddleware(s.handleGoogleLogin))
 	s.router.HandleFunc("/auth/google/callback", authMiddleware(s.handleGoogleCallback))
 	s.router.HandleFunc("/auth/logout", middleware.PanicRecovery(s.handleLogout))
 
 	// Admin routes (protected) with panic recovery and rate limiting (30 requests per IP per minute)
-	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute)
+	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute, trustProxy)
 	adminMiddleware := middleware.Chain(middleware.PanicRecovery, adminRateLimit)
 
-	s.router.HandleFunc("/admin", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminDashboard(s))))
-	s.router.HandleFunc("/admin/invitations", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminInvitations(s))))
-	s.router.HandleFunc("/admin/invitations/new", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminNewInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/create", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminCreateInvitation(s)))))
-	s.router.HandleFunc("/admin/invitations/edit/", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminEditInvitation(s))))
-	s.router.HandleFunc("/admin/invitations/update/", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminUpdateInvitation(s)))))
-	s.router.HandleFunc("/admin/invitations/delete", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminDeleteInvitation(s)))))
-	s.router.HandleFunc("/admin/invitations/mark-sent", middleware.PanicRecovery(s.requireAuth(adminMiddleware(handlers.HandleAdminMarkSent(s)))))
-	s.router.HandleFunc("/admin/invitations/download-csv", middleware.PanicRecovery(s.requireAuth(handlers.HandleAdminDownloadCSV(s))))
+	// Apply adminMiddleware consistently to all admin routes
+	// Note: adminMiddleware already includes PanicRecovery, so we don't wrap it again
+	s.router.HandleFunc("/admin", s.requireAuth(adminMiddleware(handlers.HandleAdminDashboard(s))))
+	s.router.HandleFunc("/admin/invitations", s.requireAuth(adminMiddleware(handlers.HandleAdminInvitations(s))))
+	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(adminMiddleware(handlers.HandleAdminNewInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminMiddleware(handlers.HandleAdminCreateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(adminMiddleware(handlers.HandleAdminEditInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminMiddleware(handlers.HandleAdminUpdateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminMiddleware(handlers.HandleAdminDeleteInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminMiddleware(handlers.HandleAdminMarkSent(s))))
+	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(adminMiddleware(handlers.HandleAdminDownloadCSV(s))))
 }
 
+// Handler returns the HTTP handler for the server
+func (s *Server) Handler() http.Handler {
+	return s.router
+}
+
+// Start starts the HTTP server (deprecated: use Handler() with http.Server for graceful shutdown)
 func (s *Server) Start(addr string) error {
 	return http.ListenAndServe(addr, s.router)
 }
@@ -103,7 +120,13 @@ func (s *Server) Start(addr string) error {
 // requireAuth is a middleware that checks if user is authenticated
 func (s *Server) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		session, _ := s.sessionStore.Get(r, "auth-session")
+		session, err := s.sessionStore.Get(r, "auth-session")
+		if err != nil {
+			// Session error (tampered cookie, decryption failure, etc.)
+			// Redirect to login to get a fresh session
+			http.Redirect(w, r, "/auth/google", http.StatusSeeOther)
+			return
+		}
 
 		email, ok := session.Values["email"].(string)
 		if !ok || email == "" {
@@ -130,7 +153,7 @@ func (s *Server) isAdminEmail(email string) bool {
 	return false
 }
 
-// extractPhoneFromRequest extracts the phone number from the request for rate limiting
+// extractPhoneFromRequest extracts and normalizes the phone number from the request for rate limiting
 func (s *Server) extractPhoneFromRequest(r *http.Request) string {
 	// Parse form if not already parsed
 	if err := r.ParseForm(); err != nil {
@@ -143,7 +166,15 @@ func (s *Server) extractPhoneFromRequest(r *http.Request) string {
 		return ""
 	}
 
-	// Return the phone as-is for rate limiting key
-	// We don't normalize here to avoid expensive operations in middleware
-	return phone
+	// Normalize phone number to prevent rate limit bypass
+	// This ensures "+40721234567", "0721234567", "0721 234 567", etc. all map to the same key
+	// If normalization fails, use the original phone (better than no rate limiting)
+	normalizedPhone, err := utils.NormalizePhoneNumber(phone)
+	if err != nil {
+		// If normalization fails, return original phone for rate limiting
+		// This prevents bypassing rate limits with invalid phone numbers
+		return phone
+	}
+
+	return normalizedPhone
 }

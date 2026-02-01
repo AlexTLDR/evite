@@ -30,6 +30,9 @@ type Config struct {
 
 	// App
 	BaseURL string
+
+	// Security
+	TrustProxy bool // Whether to trust X-Forwarded-For and X-Real-IP headers
 }
 
 func Load() (*Config, error) {
@@ -44,6 +47,7 @@ func Load() (*Config, error) {
 		ChurchAddress:      getEnv("CHURCH_ADDRESS", ""),
 		RestaurantName:     getEnv("RESTAURANT_NAME", ""),
 		RestaurantAddress:  getEnv("RESTAURANT_ADDRESS", ""),
+		TrustProxy:         getEnv("TRUST_PROXY", "true") == "true", // Default to true for production behind ingress
 	}
 
 	// Parse admin emails

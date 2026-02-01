@@ -52,7 +52,8 @@ func TestRateLimiter_DifferentKeys(t *testing.T) {
 
 func TestRateLimitByIP(t *testing.T) {
 	// Create middleware: 2 requests per 100ms
-	middleware := RateLimitByIP(2, 100*time.Millisecond)
+	// trustProxy=false for testing (use RemoteAddr directly)
+	middleware := RateLimitByIP(2, 100*time.Millisecond, false)
 
 	handler := middleware(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -85,7 +86,7 @@ func TestRateLimitByIP(t *testing.T) {
 }
 
 func TestRateLimitByIP_DifferentIPs(t *testing.T) {
-	middleware := RateLimitByIP(1, 100*time.Millisecond)
+	middleware := RateLimitByIP(1, 100*time.Millisecond, false)
 
 	handler := middleware(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -126,24 +127,49 @@ func TestGetClientIP(t *testing.T) {
 		remoteAddr    string
 		xForwardedFor string
 		xRealIP       string
+		trustProxy    bool
 		expectedIP    string
 	}{
 		{
-			name:       "RemoteAddr only",
+			name:       "RemoteAddr only - no proxy",
 			remoteAddr: "192.168.1.1:12345",
+			trustProxy: false,
 			expectedIP: "192.168.1.1",
 		},
 		{
-			name:          "X-Forwarded-For header",
+			name:          "X-Forwarded-For header - trusted proxy",
 			remoteAddr:    "10.0.0.1:12345",
 			xForwardedFor: "203.0.113.1",
+			trustProxy:    true,
 			expectedIP:    "203.0.113.1",
 		},
 		{
-			name:       "X-Real-IP header",
+			name:          "X-Forwarded-For header - untrusted proxy (should ignore)",
+			remoteAddr:    "10.0.0.1:12345",
+			xForwardedFor: "203.0.113.1",
+			trustProxy:    false,
+			expectedIP:    "10.0.0.1",
+		},
+		{
+			name:       "X-Real-IP header - trusted proxy",
 			remoteAddr: "10.0.0.1:12345",
 			xRealIP:    "203.0.113.2",
+			trustProxy: true,
 			expectedIP: "203.0.113.2",
+		},
+		{
+			name:       "X-Real-IP header - untrusted proxy (should ignore)",
+			remoteAddr: "10.0.0.1:12345",
+			xRealIP:    "203.0.113.2",
+			trustProxy: false,
+			expectedIP: "10.0.0.1",
+		},
+		{
+			name:          "X-Forwarded-For with multiple IPs - trusted proxy",
+			remoteAddr:    "10.0.0.1:12345",
+			xForwardedFor: "203.0.113.1, 10.0.0.2, 10.0.0.3",
+			trustProxy:    true,
+			expectedIP:    "203.0.113.1", // Should take the first (leftmost) IP
 		},
 	}
 
@@ -158,7 +184,7 @@ func TestGetClientIP(t *testing.T) {
 				req.Header.Set("X-Real-IP", tt.xRealIP)
 			}
 
-			ip := getClientIP(req)
+			ip := getClientIP(req, tt.trustProxy)
 			if ip != tt.expectedIP {
 				t.Errorf("Expected IP %s, got %s", tt.expectedIP, ip)
 			}
