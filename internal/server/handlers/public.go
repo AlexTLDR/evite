@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/AlexTLDR/evite/internal/config"
@@ -30,8 +31,35 @@ type homePageData struct {
 	deadlineText   string
 }
 
+// isBot checks if the request is from a bot or preview service
+func isBot(userAgent string) bool {
+	// Common bot/preview user agents
+	botPatterns := []string{
+		"WhatsApp",
+		"facebookexternalhit",
+		"Twitterbot",
+		"LinkedInBot",
+		"Slackbot",
+		"TelegramBot",
+		"Discordbot",
+		"bot",
+		"crawler",
+		"spider",
+		"preview",
+		"HeadlessChrome",
+	}
+
+	userAgentLower := strings.ToLower(userAgent)
+	for _, pattern := range botPatterns {
+		if strings.Contains(userAgentLower, strings.ToLower(pattern)) {
+			return true
+		}
+	}
+	return false
+}
+
 // loadInvitationByToken loads an invitation by token and marks it as opened and sent
-func loadInvitationByToken(db *database.DB, token string) *database.Invitation {
+func loadInvitationByToken(db *database.DB, token string, userAgent string) *database.Invitation {
 	if token == "" {
 		return nil
 	}
@@ -39,6 +67,12 @@ func loadInvitationByToken(db *database.DB, token string) *database.Invitation {
 	invitation, err := db.GetInvitationByToken(token)
 	if err != nil {
 		return nil
+	}
+
+	// Don't mark as opened/sent if this is a bot/preview request
+	if isBot(userAgent) {
+		fmt.Printf("Bot detected (User-Agent: %s), not marking invitation as opened\n", userAgent)
+		return invitation
 	}
 
 	// Mark as sent if not already (if they opened it, it was sent)
@@ -93,12 +127,13 @@ func prepareHomePageData(s Server, r *http.Request) homePageData {
 	lang := i18n.GetLanguageFromRequest(r)
 	themes := config.GetThemes()
 	token := r.URL.Query().Get("token")
+	userAgent := r.Header.Get("User-Agent")
 
 	return homePageData{
 		lang:           string(lang),
 		lightTheme:     themes.Light,
 		darkTheme:      themes.Dark,
-		invitation:     loadInvitationByToken(s.GetDB(), token),
+		invitation:     loadInvitationByToken(s.GetDB(), token, userAgent),
 		deadlinePassed: checkDeadlinePassed(s.GetConfig()),
 		deadlineText:   formatDeadline(s.GetConfig().RSVPDeadline, lang),
 	}
@@ -117,7 +152,7 @@ func HandleHome(s Server) http.HandlerFunc {
 }
 
 // HandleRSVP redirects RSVP links to home page with token
-func HandleRSVP(s Server) http.HandlerFunc {
+func HandleRSVP(_ Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract token from URL path
 		token := r.URL.Path[len("/rsvp/"):]
