@@ -2,9 +2,12 @@ package server
 
 import (
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/AlexTLDR/evite/internal/config"
 	"github.com/AlexTLDR/evite/internal/database"
+	"github.com/AlexTLDR/evite/internal/middleware"
 	"github.com/AlexTLDR/evite/internal/server/handlers"
 	"github.com/gorilla/sessions"
 )
@@ -51,25 +54,38 @@ func (s *Server) setupRoutes() {
 	fs := http.FileServer(http.Dir("./static"))
 	s.router.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Public routes
-	s.router.HandleFunc("/", handlers.HandleHome(s))
-	s.router.HandleFunc("/rsvp/", handlers.HandleRSVP(s))
-	s.router.HandleFunc("/rsvp/submit", handlers.HandleRSVPSubmit(s))
+	// General page rate limiting (200 requests per hour per IP)
+	pageRateLimit := middleware.RateLimitByIP(200, 1*time.Hour)
 
-	// Auth routes
-	s.router.HandleFunc("/auth/google", s.handleGoogleLogin)
-	s.router.HandleFunc("/auth/google/callback", s.handleGoogleCallback)
+	// Public routes with page rate limiting
+	s.router.HandleFunc("/", pageRateLimit(handlers.HandleHome(s)))
+	s.router.HandleFunc("/rsvp/", pageRateLimit(handlers.HandleRSVP(s)))
+
+	// RSVP submit with rate limiting
+	// - 15 requests per IP per 15 minutes
+	// - 15 requests per phone number per 15 minutes
+	rsvpRateLimit := middleware.CombinedRateLimit(
+		middleware.RateLimitByIP(15, 15*time.Minute),
+		middleware.RateLimitByKey(15, 15*time.Minute, s.extractPhoneFromRequest),
+	)
+	s.router.HandleFunc("/rsvp/submit", rsvpRateLimit(handlers.HandleRSVPSubmit(s)))
+
+	// Auth routes with rate limiting (10 requests per IP per 5 minutes)
+	authRateLimit := middleware.RateLimitByIP(10, 5*time.Minute)
+	s.router.HandleFunc("/auth/google", authRateLimit(s.handleGoogleLogin))
+	s.router.HandleFunc("/auth/google/callback", authRateLimit(s.handleGoogleCallback))
 	s.router.HandleFunc("/auth/logout", s.handleLogout)
 
-	// Admin routes (protected)
+	// Admin routes (protected) with rate limiting (30 requests per IP per minute)
+	adminRateLimit := middleware.RateLimitByIP(30, 1*time.Minute)
 	s.router.HandleFunc("/admin", s.requireAuth(handlers.HandleAdminDashboard(s)))
 	s.router.HandleFunc("/admin/invitations", s.requireAuth(handlers.HandleAdminInvitations(s)))
 	s.router.HandleFunc("/admin/invitations/new", s.requireAuth(handlers.HandleAdminNewInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(handlers.HandleAdminCreateInvitation(s)))
+	s.router.HandleFunc("/admin/invitations/create", s.requireAuth(adminRateLimit(handlers.HandleAdminCreateInvitation(s))))
 	s.router.HandleFunc("/admin/invitations/edit/", s.requireAuth(handlers.HandleAdminEditInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(handlers.HandleAdminUpdateInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(handlers.HandleAdminDeleteInvitation(s)))
-	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(handlers.HandleAdminMarkSent(s)))
+	s.router.HandleFunc("/admin/invitations/update/", s.requireAuth(adminRateLimit(handlers.HandleAdminUpdateInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/delete", s.requireAuth(adminRateLimit(handlers.HandleAdminDeleteInvitation(s))))
+	s.router.HandleFunc("/admin/invitations/mark-sent", s.requireAuth(adminRateLimit(handlers.HandleAdminMarkSent(s))))
 	s.router.HandleFunc("/admin/invitations/download-csv", s.requireAuth(handlers.HandleAdminDownloadCSV(s)))
 }
 
@@ -105,4 +121,22 @@ func (s *Server) isAdminEmail(email string) bool {
 		}
 	}
 	return false
+}
+
+// extractPhoneFromRequest extracts the phone number from the request for rate limiting
+func (s *Server) extractPhoneFromRequest(r *http.Request) string {
+	// Parse form if not already parsed
+	if err := r.ParseForm(); err != nil {
+		return ""
+	}
+
+	// Get phone from form
+	phone := strings.TrimSpace(r.FormValue("phone"))
+	if phone == "" {
+		return ""
+	}
+
+	// Return the phone as-is for rate limiting key
+	// We don't normalize here to avoid expensive operations in middleware
+	return phone
 }
